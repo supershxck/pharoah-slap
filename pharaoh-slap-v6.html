@@ -916,9 +916,9 @@ window.selectMode=function(m){
     onlineBtn.style.background=m==="online"?"rgba(52,211,153,.1)":"";
   }
   if(m==="online"){
-    // Open online lobby immediately
     showVeil(null);
     $("onlineLobbyVeil").classList.remove("hidden");
+    setHJMode("host"); // connects + creates room; user can switch to Join to cancel
   }
 };
 
@@ -2236,7 +2236,16 @@ const NET = (function(){
     }
   }
 
-  return { createRoom, joinRoom, startGame, playCard, slap, reconnect,
+  function setMode(mode) { hjMode = mode; }
+
+  function disconnect() {
+    state = "idle";
+    if (ws) { try { ws.close(); } catch(e) {} ws = null; }
+    clearInterval(pingInterval);
+    setStatus("", "");
+  }
+
+  return { createRoom, joinRoom, startGame, playCard, slap, reconnect, setMode, disconnect,
     get myId(){ return myId; },
     get isOnline(){ return settings.playerMode === "online"; },
   };
@@ -2244,12 +2253,20 @@ const NET = (function(){
 
 // ── Online lobby UI helpers ───────────────────────────────────────────────
 window.setHJMode = function(mode) {
-  const hjMode_val = mode;
+  NET.setMode(mode);
   $("hjHost").classList.toggle("sel", mode==="host");
   $("hjJoin").classList.toggle("sel", mode==="join");
   $("hostPanel").style.display = mode==="host" ? "" : "none";
   $("joinPanel").style.display = mode==="join" ? "" : "none";
-  if (mode === "host") NET.createRoom();
+  if (mode === "host") {
+    // (Re-)connect and create a room
+    $("roomCodeDisplay").textContent = "----";
+    NET.createRoom();
+  } else {
+    // Switching to Join — disconnect host socket so guest starts fresh
+    NET.disconnect();
+    $("onlineStatus").textContent = "";
+  }
 };
 
 window.onlineBack = function() {

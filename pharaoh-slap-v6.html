@@ -2684,7 +2684,7 @@
           >
             <div class="pm-icon">🌐</div>
             <span class="pm-label">Online</span>
-            <span class="pm-sub">2–4 players</span>
+            <span class="pm-sub">host + 2–3 = 3–4 total</span>
             <span class="pm-sub" style="margin-top: 4px; color: #34d399"
               >phones welcome</span
             >
@@ -2836,7 +2836,7 @@
             ⚙ ADVANCED · SERVER
           </summary>
           <input
-            id="serverUrlInput"
+            id="pharaohServerInput"
             class="name-input"
             type="url"
             inputmode="url"
@@ -2849,7 +2849,7 @@
               letter-spacing: 0.02em;
               margin-top: 8px;
             "
-            placeholder="wss://your-app.onrender.com"
+            placeholder="wss://pharaoh-slap.onrender.com"
             value=""
           />
         </details>
@@ -2873,7 +2873,7 @@
           >
             Create Room
           </button>
-          <div id="roomCodeDisplay" style="display: none">----</div>
+          <div id="roomCodeDisplay" style="display: roomID">----</div>
           <div
             id="roomCodeLabel"
             class="hieroglyph"
@@ -2885,7 +2885,7 @@
             id="hostWaitingMsg"
             style="font-size: 12px; color: #6ba88a; margin: 0; display: none"
           >
-            Waiting for players… (2–4 players)
+            Waiting for players… (3–4 total)
           </p>
         </div>
 
@@ -5365,6 +5365,7 @@
           let intentionalDisconnect = false;
           let reconnectTimer = null;
           let pingInterval = null;
+          let roomCreationPending = false;
           let onlinePlayers = []; // [{ id, name, cardCount }]
           const PLAYER_AVATARS = ["𓂀", "𓂝", "𓁐", "𓀯"];
           const PLAYER_COLORS = ["#5fa8ff", "#fb923c", "#c084fc", "#34d399"];
@@ -5413,6 +5414,7 @@
               ws = new WebSocket(url);
             } catch (e) {
               setStatus("Bad server address: " + url, "error");
+              reenableCreate();
               return;
             }
             const thisWs = ws;
@@ -5468,15 +5470,16 @@
             };
             function reenableCreate() {
               const crb = $("createRoomBtn");
-              if (crb && $("roomCodeDisplay").style.display === "none") {
+              if (crb && roomCreationPending) {
                 crb.disabled = false;
                 crb.style.display = "";
               }
-              // Stop any running generator and hide the code display
+              // Also stop any running generator and hide the code display
               stopRoomCodeGenerator();
               $("roomCodeDisplay").style.display = "none";
               $("roomCodeLabel").style.display = "none";
               $("hostWaitingMsg").style.display = "none";
+              roomCreationPending = false;
             }
             ws.onclose = () => {
               clearInterval(pingInterval);
@@ -5489,6 +5492,9 @@
               if (state === "playing" && settings.playerMode === "online") {
                 $("disconnectedOverlay").classList.add("show");
                 scheduleReconnect();
+              } else if (roomCreationPending) {
+                setStatus("Couldn't create the room. Tap Create Room to try again.", "error");
+                reenableCreate();
               } else if (!opened) {
                 // never connected at all — leave the helpful onerror message in place
                 reenableCreate();
@@ -5530,11 +5536,13 @@
               0,
               20,
             );
+            const requestedCode = generateRoomCode();
+            roomCreationPending = true;
             const btn = $("createRoomBtn");
             if (btn) btn.disabled = true;
             setStatus("Connecting to server…", "spin");
             // Start the visual room code generator animation immediately
-            startRoomCodeGenerator();
+            startRoomCodeGenerator(requestedCode);
             // Best-effort wake (fire-and-forget; does NOT gate the socket — a CORS-blocked
             // or slow /health must never stop us from sending CREATE_ROOM).
             pingHealth();
@@ -5543,6 +5551,7 @@
               setStatus("Creating room…", "spin");
               send({
                 type: "CREATE_ROOM",
+                roomId: requestedCode,
                 playerName: name,
                 settings: {
                   rules: settings.rules,
@@ -5558,26 +5567,37 @@
           const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
           let roomCodeGenInterval = null;
           let roomCodeGenStartTime = 0;
-          const ROOM_CODE_GEN_DURATION = 1200;
-          const ROOM_CODE_GEN_TICK = 50;
+          const ROOM_CODE_GEN_DURATION = 1200; // ms total animation
+          const ROOM_CODE_GEN_TICK = 50; // ms between character changes
 
-          function startRoomCodeGenerator() {
+          function generateRoomCode() {
+            return Array.from({ length: 4 }, () =>
+              CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)],
+            ).join("");
+          }
+
+          function startRoomCodeGenerator(code) {
             const display = $("roomCodeDisplay");
             const label = $("roomCodeLabel");
             if (!display) return;
+            const finalCode = (code || generateRoomCode()).toUpperCase().trim();
+            // Reset and show the code immediately so the host can share it right away.
             display.style.display = "";
-            display.textContent = "----";
+            display.textContent = finalCode;
             label.style.display = "";
-            label.textContent = "generating…";
+            label.textContent = "creating…";
             roomCodeGenStartTime = Date.now();
+
+            if (roomCodeGenInterval) {
+              clearInterval(roomCodeGenInterval);
+              roomCodeGenInterval = null;
+            }
+
+            // Keep a short-lived pulse so it still feels like "creating" without
+            // changing the actual room code the host will share.
             roomCodeGenInterval = setInterval(() => {
               const elapsed = Date.now() - roomCodeGenStartTime;
-              const progress = Math.min(elapsed / ROOM_CODE_GEN_DURATION, 1);
-              const chars = [];
-              for (let i = 0; i < 4; i++)
-                chars.push(CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]);
-              display.textContent = chars.join("");
-              if (progress >= 1) {
+              if (elapsed >= ROOM_CODE_GEN_DURATION) {
                 clearInterval(roomCodeGenInterval);
                 roomCodeGenInterval = null;
                 label.textContent = "share this code";
@@ -5628,8 +5648,8 @@
 
           function startGame() {
             if (!isHost) return;
-            if (onlinePlayers.length < 2) {
-              setStatus("Need at least 2 players", "error");
+            if (onlinePlayers.length < 3) {
+              setStatus("Need at least 3 players total (host + 2)", "error");
               return;
             }
             send({ type: "START_GAME" });
@@ -5660,8 +5680,9 @@
                 myId = msg.playerId;
                 myRoomId = msg.roomId;
                 isHost = true;
+                roomCreationPending = false;
                 if (msg.settings) Object.assign(settings, msg.settings);
-                // Stop the room code generator and show the real server code
+                // Stop the room code generator animation and show the final code
                 stopRoomCodeGenerator();
                 $("createRoomBtn").style.display = "none";
                 $("roomCodeDisplay").style.display = "";
@@ -5961,9 +5982,10 @@
                   "⚠ " + (msg.message || msg.code || "Unknown error"),
                   "error",
                 );
+                roomCreationPending = false;
                 // Re-enable Create Room so the host can try again after a failure.
                 const crb = $("createRoomBtn");
-                if (crb && $("roomCodeDisplay").style.display === "none") {
+                if (crb) {
                   crb.disabled = false;
                   crb.style.display = "";
                 }
@@ -6136,8 +6158,8 @@
               $("onlineStartBtn").style.opacity =
                 n >= 2 && everyoneReady ? "1" : ".5";
               $("lobbyHint").textContent =
-                n < 2
-                  ? "Waiting for at least 1 more player to join (2–4 total)…"
+                n < 3
+                  ? "Waiting for players to join (3–4 total)…"
                   : everyoneReady
                     ? "Everyone's ready — tap Start!"
                     : "Waiting for all players to ready up…";
@@ -6214,6 +6236,11 @@
           function disconnect() {
             intentionalDisconnect = true;
             state = "idle";
+            myId = null;
+            myRoomId = null;
+            isHost = false;
+            roomCreationPending = false;
+            onlinePlayers = [];
             if (ws) {
               try {
                 ws.close();
@@ -6325,7 +6352,7 @@
         };
 
         window.onlineBack = function () {
-          // Stop any running room code generator and reset lobby UI
+          // Stop any running room code generator
           stopRoomCodeGenerator();
           $("roomCodeDisplay").style.display = "none";
           $("roomCodeLabel").style.display = "none";

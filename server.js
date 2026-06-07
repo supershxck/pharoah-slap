@@ -50,7 +50,7 @@ const PORT = process.env.PORT || 8080;
 // Slap arbitration window: slaps within this many ms of each other are "simultaneous"
 // → server picks the lower adjusted timestamp (earlier reaction wins)
 const SLAP_GRACE_MS = 30;
-// Max players per room
+// Max players per room (host + 2–3 joiners = 3–4 total)
 const MAX_PLAYERS = 4;
 // Heartbeat interval
 const HEARTBEAT_MS = 5000;
@@ -140,6 +140,17 @@ function makeRoomCode() {
     ).join("");
     attempts++;
   } while (rooms.has(code) && attempts < 1000);
+  return code;
+}
+
+function normalizeRoomCode(value) {
+  const code = String(value || "")
+    .toUpperCase()
+    .trim();
+  if (code.length !== 4) return "";
+  for (const ch of code) {
+    if (!CODE_CHARS.includes(ch)) return "";
+  }
   return code;
 }
 
@@ -666,7 +677,13 @@ wss.on("connection", (ws, req) => {
 
       // ── Create room ────────────────────────────────────────────────────
       case "CREATE_ROOM": {
-        const code = makeRoomCode();
+        const requestedCode = normalizeRoomCode(
+          msg.roomId || msg.code || msg.preferredRoomId,
+        );
+        const code =
+          requestedCode && !rooms.has(requestedCode)
+            ? requestedCode
+            : makeRoomCode();
         playerId = makePlayerId();
         roomId = code;
         const room = new Room(code, playerId, msg.settings || {});
@@ -762,12 +779,12 @@ wss.on("connection", (ws, req) => {
           );
           return;
         }
-        if (room.players.length < 2) {
+        if (room.players.length < 3) {
           ws.send(
             JSON.stringify({
               type: "ERROR",
               code: "NOT_ENOUGH_PLAYERS",
-              message: "Need at least 2 players.",
+              message: "Need at least 3 players total (host + 2).",
             }),
           );
           return;

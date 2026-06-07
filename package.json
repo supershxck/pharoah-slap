@@ -1,0 +1,16 @@
+{
+  "name": "pharaoh-slap-server",
+  "version": "1.0.0",
+  "description": "Authoritative WebSocket server for Pharaoh Slap",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.17.0"
+  }
+}

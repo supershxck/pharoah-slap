@@ -65,6 +65,29 @@ h1 .sub{display:block;font-size:.4em;letter-spacing:.45em;color:#cdb877;margin-t
 #bandMid.show{display:flex;}
 
 .arena{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:4px 0 0;}
+
+/* ── ONLINE OPPONENT BADGES (around the table) ───────────────────────────── */
+#oppZone{display:none;}
+.arena.online #oppZone{display:block;}
+.opp{position:absolute;z-index:4;display:none;flex-direction:column;align-items:center;gap:2px;
+  background:rgba(6,22,15,.82);border:2px solid var(--gold-deep);border-radius:14px;
+  padding:6px 10px;min-width:74px;max-width:120px;text-align:center;transition:.18s;}
+.opp.show{display:flex;}
+.opp.active{border-color:var(--gold-bright);background:rgba(232,198,106,.16);
+  box-shadow:0 0 16px rgba(232,198,106,.4);}
+.opp .opp-av{font-size:22px;line-height:1;}
+.opp .opp-name{font-family:Georgia,serif;font-size:12.5px;color:var(--cream);letter-spacing:.04em;
+  max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.opp .opp-cards{font-size:10.5px;color:#8fb6a3;letter-spacing:.04em;}
+.opp .opp-cards b{color:var(--gold-bright);font-variant-numeric:tabular-nums;}
+.opp .opp-turn{font-size:9px;letter-spacing:.14em;color:var(--gold-bright);min-height:11px;}
+.opp-top{top:6px;left:50%;transform:translateX(-50%);}
+.opp-left{top:42%;left:6px;transform:translateY(-50%);}
+.opp-right{top:42%;right:6px;transform:translateY(-50%);}
+.opp.active.opp-top{transform:translateX(-50%) scale(1.05);}
+.opp.active.opp-left{transform:translateY(-50%) scale(1.05);}
+.opp.active.opp-right{transform:translateY(-50%) scale(1.05);}
+
 .player-band{display:flex;align-items:center;gap:10px;padding:5px 14px;border-radius:40px;transition:.2s;}
 .player-band.active{background:linear-gradient(90deg,#0000,rgba(232,198,106,.18),#0000);
   box-shadow:0 0 24px rgba(232,198,106,.22) inset;}
@@ -497,6 +520,40 @@ h1 .sub{display:block;font-size:.4em;letter-spacing:.45em;color:#cdb877;margin-t
   margin-left:auto;animation:dotPulse .8s infinite alternate;}
 @keyframes dotPulse{from{opacity:.5;}to{opacity:1;}}
 
+/* shared roster (host + guest) */
+#rosterList{width:100%;max-width:360px;background:#061c12;border:1px solid var(--gold-deep);
+  border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;margin:0 auto;}
+.roster-row{display:flex;align-items:center;gap:10px;padding:6px 4px;}
+.roster-av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none;
+  font-size:17px;background:radial-gradient(circle at 35% 30%,#5a4626,#150f06);border:2px solid var(--gold-deep);}
+.roster-name{font-family:Georgia,serif;font-size:15px;color:var(--cream);letter-spacing:.05em;}
+.roster-tag{font-size:9.5px;letter-spacing:.12em;color:var(--gold);margin-left:5px;
+  border:1px solid var(--gold-deep);border-radius:6px;padding:1px 5px;vertical-align:middle;}
+.roster-status{margin-left:auto;font-size:11px;letter-spacing:.1em;font-weight:700;}
+.roster-status.ready{color:#34d399;}
+.roster-status.waiting{color:#caa75a;opacity:.8;}
+.roster-status.host{color:#7fd7ff;}
+
+/* rules summary (read-only for guests) */
+.rules-summary{width:100%;max-width:360px;margin:0 auto;background:#06160f;
+  border:1px solid var(--gold-deep);border-radius:12px;padding:9px 12px;text-align:left;
+  font-size:12px;line-height:1.5;color:#bfe6cf;letter-spacing:.03em;}
+.rules-summary b{color:var(--gold-bright);font-weight:700;}
+.rules-summary .rs-mode{color:var(--gold);font-family:Georgia,serif;font-size:13px;display:block;margin-bottom:2px;}
+
+#readyBtn.is-ready{background:linear-gradient(160deg,#34d399,#0f7a55);color:#04140d;box-shadow:0 6px 0 #064a32,0 10px 24px #000a;}
+
+/* countdown overlay */
+#countdownOverlay{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 45%,rgba(8,40,28,.86),rgba(2,12,8,.96));backdrop-filter:blur(4px);}
+#countdownOverlay.show{display:flex;}
+#countdownNum{font-family:Georgia,serif;font-weight:800;font-size:clamp(90px,32vw,200px);
+  color:var(--gold-bright);text-shadow:0 0 50px rgba(255,200,50,.7),0 6px 0 #000a;
+  animation:cdPop .9s ease-out;}
+#countdownNum.go{font-size:clamp(60px,20vw,150px);letter-spacing:.05em;color:#34d399;
+  text-shadow:0 0 60px rgba(52,211,153,.8),0 6px 0 #000a;}
+@keyframes cdPop{0%{transform:scale(.3);opacity:0;}40%{transform:scale(1.15);opacity:1;}100%{transform:scale(1);opacity:1;}}
+
 /* status/error strip */
 #onlineStatus{font-size:12px;letter-spacing:.1em;color:#8fb6a3;min-height:18px;
   max-width:340px;transition:.2s;}
@@ -595,6 +652,13 @@ input,textarea,select{font-size:16px;}
         <div class="pcount"><b id="midCount">17</b> cards</div>
         <div class="pkeys" id="midKeys"><span id="kMidPlay">K</span> play &nbsp;<span id="kMidSlap">L</span> slap</div>
       </div>
+    </div>
+
+    <!-- Online opponents arranged around the table (up to 3) -->
+    <div id="oppZone">
+      <div class="opp opp-left"   id="oppL"></div>
+      <div class="opp opp-top"    id="oppT"></div>
+      <div class="opp opp-right"  id="oppR"></div>
     </div>
 
     <div class="table">
@@ -760,10 +824,6 @@ input,textarea,select{font-size:16px;}
       <div id="roomCodeDisplay" style="display:none;">----</div>
       <div id="roomCodeLabel" class="hieroglyph" style="font-size:11px;display:none;">share this code</div>
       <p id="hostWaitingMsg" style="font-size:12px;color:#6ba88a;margin:0;display:none;">Waiting for players… (2–4)</p>
-      <div id="waitingList"></div>
-      <button class="start-btn" id="onlineStartBtn" style="display:none;" onclick="NET.startGame()">
-        Start Game
-      </button>
     </div>
 
     <!-- JOIN panel -->
@@ -774,11 +834,25 @@ input,textarea,select{font-size:16px;}
       <button class="start-btn" id="joinBtn" onclick="NET.joinRoom()">
         Join Room
       </button>
-      <div id="joinWaitingList" style="width:100%;max-width:360px;"></div>
+    </div>
+
+    <!-- Shared roster + rules + actions (shown once in a room) -->
+    <div id="roomArea" class="olobby-section" style="display:none;align-items:stretch;">
+      <div id="rulesSummary" class="rules-summary"></div>
+      <button class="ghost-btn" id="editRulesBtn" style="display:none;" onclick="openLobbySettings()">⚙ Edit Rules</button>
+      <div id="rosterList"></div>
+      <button class="start-btn" id="readyBtn" style="display:none;" onclick="NET.toggleReady()">I'm Ready ✓</button>
+      <button class="start-btn" id="onlineStartBtn" style="display:none;" onclick="NET.startGame()">Start Game</button>
+      <p id="lobbyHint" style="font-size:11px;color:#6ba88a;margin:2px 0 0;"></p>
     </div>
 
     <div id="onlineStatus"></div>
     <button class="ghost-btn" id="onlineBackBtn" onclick="onlineBack()">← Back</button>
+  </div>
+
+  <!-- COUNTDOWN OVERLAY -->
+  <div id="countdownOverlay">
+    <div id="countdownNum">3</div>
   </div>
 
 </div>
@@ -922,6 +996,7 @@ let warState=null;
 let lifePlayed=0,lifeSlaps=0;
 let aiSlapTimer=null,aiPlayTimer=null,reviewTimer=null;
 let settingsFromGame=false;
+let settingsFromLobby=false;
 const totalCards=()=>settings.numDecks*52;
 
 let gamePileWins=0,gameBiggestPile=0,gameStartTime=0;
@@ -1789,13 +1864,30 @@ buildRankButtons();syncDiff();syncDeckSeg();syncModeOpts();
 function showVeil(id){["startVeil","settingsVeil","endVeil"].forEach(v=>$(v).classList.add("hidden"));if(id)$(id).classList.remove("hidden");}
 $("startBtn").onclick=()=>{audio();showVeil(null);$("gameTop").style.display="flex";lifePlayed=0;lifeSlaps=0;setup();};
 $("openSettings").onclick=()=>{settingsFromGame=false;buildRulePanel();syncDiff();syncDeckSeg();syncModeOpts();buildRankButtons();state="settings";showVeil("settingsVeil");};
-$("closeSettings").onclick=()=>{showVeil(null);if(settingsFromGame){state="playing";render();setActive();if(settings.playerMode==="1p"||settings.playerMode==="3p")scheduleAI();}else{state="menu";$("gameTop").style.display="none";showVeil("startVeil");}};
+$("closeSettings").onclick=()=>{
+  showVeil(null);
+  if(settingsFromLobby){
+    settingsFromLobby=false;
+    NET.sendSettings();              // push host's rule changes to the room
+    NET.refreshLobby();
+    $("onlineLobbyVeil").classList.remove("hidden");
+    return;
+  }
+  if(settingsFromGame){state="playing";render();setActive();if(settings.playerMode==="1p"||settings.playerMode==="3p")scheduleAI();}
+  else{state="menu";$("gameTop").style.display="none";showVeil("startVeil");}
+};
 $("pauseBtn").onclick=()=>{if(state==="playing"||state==="review"){clearAll();settingsFromGame=true;state="settings";buildRulePanel();syncDiff();syncDeckSeg();syncModeOpts();buildRankButtons();showVeil("settingsVeil");}};
-$("quitBtn").onclick=()=>{clearAll();warState=null;state="menu";$("gameTop").style.display="none";showVeil("startVeil");};
+function resetArenaToLocal(){
+  arenaEl.classList.remove("online");
+  ["oppL","oppT","oppR"].forEach(id=>{const e=$(id);if(e){e.classList.remove("show","active");e.innerHTML="";}});
+  $("bandTop").style.display="";
+  if(typeof NET!=="undefined"){try{NET.disconnect();}catch(e){}}
+}
+$("quitBtn").onclick=()=>{clearAll();warState=null;resetArenaToLocal();state="menu";$("gameTop").style.display="none";showVeil("startVeil");};
 $("winAgain").onclick=()=>{hideWinScreen();showVeil(null);$("gameTop").style.display="flex";lifePlayed=0;lifeSlaps=0;setup();};
-$("winMenu").onclick=()=>{hideWinScreen();state="menu";$("gameTop").style.display="none";showVeil("startVeil");};
+$("winMenu").onclick=()=>{hideWinScreen();resetArenaToLocal();state="menu";$("gameTop").style.display="none";showVeil("startVeil");};
 $("lossAgain").onclick=()=>{hideLossScreen();showVeil(null);$("gameTop").style.display="flex";lifePlayed=0;lifeSlaps=0;setup();};
-$("lossMenu").onclick=()=>{hideLossScreen();state="menu";$("gameTop").style.display="none";showVeil("startVeil");};
+$("lossMenu").onclick=()=>{hideLossScreen();resetArenaToLocal();state="menu";$("gameTop").style.display="none";showVeil("startVeil");};
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 // P1 actions
@@ -2049,51 +2141,71 @@ const NET = (function(){
         myId = msg.playerId;
         myRoomId = msg.roomId;
         isHost = true;
+        if (msg.settings) Object.assign(settings, msg.settings);
         $("createRoomBtn").style.display = "none";
         $("roomCodeDisplay").style.display = "";
         $("roomCodeDisplay").textContent = msg.roomId;
         $("roomCodeLabel").style.display = "";
         $("hostWaitingMsg").style.display = "";
         setStatus("Room ready — share the code!","success");
-        $("onlineStartBtn").style.display = "none";
-        renderWaitingList(msg.players || [], $("waitingList"), true);
+        onlinePlayers = msg.players || [];
+        enterRoomView();
         break;
       }
 
       case "JOIN_OK": {
         myId = msg.playerId;
         myRoomId = msg.roomId;
-        isHost = false;
-        setStatus("Joined! Waiting for host to start…","success");
-        onlinePlayers = msg.players;
-        renderWaitingList(msg.players, getActiveWaitingList(), false);
+        isHost = (msg.hostId === msg.playerId);
+        if (msg.settings) Object.assign(settings, msg.settings);
+        setStatus("Joined! Tap Ready when you're set.","success");
+        onlinePlayers = msg.players || [];
+        // Joiner no longer needs the code input / join button.
+        $("joinPanel").style.display = "none";
+        $("hjHost").style.display = "none";
+        $("hjJoin").style.display = "none";
+        enterRoomView();
         break;
       }
 
-      case "PLAYER_JOINED": {
-        onlinePlayers = msg.players;
-        renderWaitingList(msg.players, getActiveWaitingList(), isHost);
-        if (isHost && msg.players.length >= 2) {
-          $("onlineStartBtn").style.display = "";
+      case "PLAYER_JOINED":
+      case "LOBBY_UPDATE": {
+        onlinePlayers = msg.players || onlinePlayers;
+        refreshLobby();
+        if (msg.type === "PLAYER_JOINED" && msg.players && msg.players.length) {
+          setStatus(`${msg.players[msg.players.length-1].name} joined (${msg.players.length}/4)`,"success");
         }
-        setStatus(`${msg.players[msg.players.length-1].name} joined (${msg.players.length}/4)`,"success");
         break;
       }
 
       case "YOU_ARE_HOST": {
         isHost = true;
         setStatus("You are now the host","success");
-        if ($("onlineStartBtn")) $("onlineStartBtn").style.display="";
+        refreshLobby();
         break;
       }
 
       case "SETTINGS_UPDATED": {
         Object.assign(settings, msg.settings || {});
+        renderRulesSummary();
+        break;
+      }
+
+      case "COUNTDOWN": {
+        showCountdown(msg.n);
+        break;
+      }
+
+      case "COUNTDOWN_CANCELLED": {
+        hideCountdown();
+        setStatus("Countdown cancelled — a player left.","error");
+        refreshLobby();
         break;
       }
 
       case "GAME_START": {
         $("disconnectedOverlay").classList.remove("show");
+        hideCountdown();
         // Build players array from server data — our position based on myId
         onlinePlayers = msg.players;
         buildOnlinePlayers(msg.players, msg.turnIdx);
@@ -2107,7 +2219,7 @@ const NET = (function(){
         modeBadgeEl.style.display = "block";
         state = "playing";
         pile = [];
-        turnIdx = msg.turnIdx;
+        // turnIdx already set correctly (local order) by buildOnlinePlayers
         challengeOwed = 0;
         challengerIdx = null;
         lifePlayed = 0;
@@ -2119,6 +2231,7 @@ const NET = (function(){
         judgmentActive = false;
         render();
         setActive();
+        highlightTurn();
         break;
       }
 
@@ -2127,8 +2240,8 @@ const NET = (function(){
         pile.push(msg.card);
         lifePlayed++;
         tick();
-        // Update turn
-        turnIdx = msg.turnIdx;
+        // Update turn (translate server index → local)
+        turnIdx = serverTurnToLocal(msg.turnIdx);
         // Update card counts from server
         if (msg.playerCounts) updateOnlineCardCounts(msg.playerCounts);
         if (msg.prizeCaptured) {
@@ -2138,12 +2251,14 @@ const NET = (function(){
         }
         render();
         setActive();
+        highlightTurn();
         break;
       }
 
       case "TURN_CHANGE": {
-        turnIdx = msg.turnIdx;
+        turnIdx = serverTurnToLocal(msg.turnIdx);
         setActive();
+        highlightTurn();
         break;
       }
 
@@ -2182,7 +2297,7 @@ const NET = (function(){
         const winnerName = getOnlinePlayerName(msg.winnerId);
         gamePileWins += isMine ? 1 : 0;
         if (msg.cardCount > gameBiggestPile && isMine) gameBiggestPile = msg.cardCount;
-        turnIdx = msg.turnIdx;
+        turnIdx = serverTurnToLocal(msg.turnIdx);
         // Update card counts
         updateOnlineCardCounts(msg.playerCounts || []);
         pile = [];
@@ -2243,12 +2358,21 @@ const NET = (function(){
       case "STATE_SYNC": {
         // Reconnected — restore view from server state
         $("disconnectedOverlay").classList.remove("show");
+        hideCountdown();
+        // Rebuild rosters/layout from the synced player list (server order).
+        if (msg.playerCounts && msg.playerCounts.length) {
+          onlinePlayers = msg.playerCounts.map(pc => ({ id: pc.id, name: pc.name, cardCount: pc.cardCount }));
+          buildOnlinePlayers(onlinePlayers, msg.turnIdx || 0);
+        }
+        $("onlineLobbyVeil").classList.add("hidden");
+        showVeil(null);
+        $("gameTop").style.display = "flex";
         pile = msg.pile || [];
-        turnIdx = msg.turnIdx;
+        turnIdx = serverTurnToLocal(msg.turnIdx || 0);
         challengeOwed = msg.challengeOwed || 0;
         updateOnlineCardCounts(msg.playerCounts || []);
         state = msg.phase === "playing" ? "playing" : msg.phase;
-        render(); setActive();
+        render(); setActive(); highlightTurn();
         break;
       }
 
@@ -2305,8 +2429,62 @@ const NET = (function(){
     const serverTurnPlayer = serverPlayers[startTurnIdx];
     turnIdx = players.findIndex(p => p.id === serverTurnPlayer.id);
     if (turnIdx < 0) turnIdx = 0;
-    updateBands();
-    updateControlLayout();
+    setupOnlineLayout();
+  }
+
+  // Lay out the arena for online play: self band at the bottom, opponents
+  // arranged around the table (1 → top, 2 → left+right, 3 → left+top+right).
+  function setupOnlineLayout() {
+    arenaEl.classList.add("online");
+    arenaEl.classList.remove("layout-2p","layout-3p");
+    $("bandTop").style.display = "none";
+    $("bandMid").classList.remove("show");
+    $("bandMid").style.display = "none";
+    // self band (bottom) — name "You", no own glyph beyond the default
+    $("bandBottom").style.display = "";
+    $("bottomName").textContent = "You";
+    $("bottomKeys").style.display = "none";
+    // hide local P2 controls
+    $("p2PlayBtn").style.display = "none";
+    $("p2SlapBtn").style.display = "none";
+    $("ctrlDivider").style.display = "none";
+    renderOpponents();
+  }
+
+  function renderOpponents() {
+    const opps = players.slice(1); // everyone except me
+    const slots = [$("oppL"), $("oppT"), $("oppR")];
+    slots.forEach(s => { s.classList.remove("show","active"); s.innerHTML = ""; });
+    // placement by opponent count
+    let order;
+    if (opps.length <= 1) order = [1];        // single opponent → top
+    else if (opps.length === 2) order = [0,2]; // → left, right
+    else order = [0,1,2];                      // → left, top, right
+    opps.forEach((op, i) => {
+      const slot = slots[order[i]];
+      if (!slot) return;
+      slot.classList.add("show");
+      slot.dataset.pid = op.id;
+      slot.innerHTML =
+        `<div class="opp-av">${op.avatar}</div>` +
+        `<div class="opp-name">${op.name}</div>` +
+        `<div class="opp-cards"><b class="oc">${op.deck.length}</b> cards</div>` +
+        `<div class="opp-turn"></div>`;
+    });
+  }
+
+  function highlightTurn() {
+    // self band
+    $("bandBottom").classList.toggle("active", turnIdx === 0 && state === "playing");
+    // opponents
+    [$("oppL"),$("oppT"),$("oppR")].forEach(slot => {
+      if (!slot.classList.contains("show")) return;
+      const pid = slot.dataset.pid;
+      const isTurn = players[turnIdx] && players[turnIdx].id === pid && state === "playing";
+      slot.classList.toggle("active", isTurn);
+      const turnEl = slot.querySelector(".opp-turn");
+      if (turnEl) turnEl.textContent = isTurn ? "◆ TURN" : "";
+    });
   }
 
   function updateOnlineCardCounts(playerCounts) {
@@ -2315,7 +2493,18 @@ const NET = (function(){
       if (p) p.deck = { length: pc.cardCount };
       const op = onlinePlayers.find(p => p.id === pc.id);
       if (op) op.cardCount = pc.cardCount;
+      // update opponent badge if shown
+      [$("oppL"),$("oppT"),$("oppR")].forEach(slot => {
+        if (slot.dataset.pid === pc.id) {
+          const b = slot.querySelector(".oc");
+          if (b) b.textContent = pc.cardCount;
+        }
+      });
     }
+    // self count
+    const me = players.find(p => p.id === myId);
+    if (me) $("bottomCount").textContent = me.deck.length;
+    highlightTurn();
   }
 
   function getOnlinePlayerName(id) {
@@ -2323,31 +2512,101 @@ const NET = (function(){
     return p ? (p.id === myId ? "You" : p.name) : "?";
   }
 
+  // Server turn index is in server (join) order; our players[] is reordered with
+  // me at 0. Translate so highlighting and the Play-button gate line up.
+  function serverTurnToLocal(serverIdx) {
+    const sp = onlinePlayers[serverIdx];
+    if (!sp) return 0;
+    const li = players.findIndex(p => p.id === sp.id);
+    return li < 0 ? 0 : li;
+  }
+
   function getOnlinePlayerIdx(id) {
     return players.findIndex(p => p.id === id);
   }
 
-  function getActiveWaitingList() {
-    return hjMode === "host" ? $("waitingList") : $("joinWaitingList");
+  // ── Lobby / roster rendering ───────────────────────────────────────────────
+  function enterRoomView() {
+    $("roomArea").style.display = "flex";
+    refreshLobby();
   }
 
-  function renderWaitingList(plist, container, showStart) {
-    if (!container) return;
-    container.innerHTML = "";
-    if (!plist.length) return;
-    container.style.display = "flex";
-    plist.forEach((p, i) => {
-      const row = document.createElement("div");
-      row.className = "waiting-player";
-      row.innerHTML = `
-        <div class="waiting-avatar">${PLAYER_AVATARS[i % PLAYER_AVATARS.length]}</div>
-        <div class="waiting-name">${p.id === myId ? "You" : p.name}${p.id===myId||i===0?"<span class='waiting-host'>(host)</span>":""}</div>
-        <div class="waiting-dot"></div>`;
-      container.appendChild(row);
-    });
-    if ($("waitingList") && showStart && plist.length >= 2) {
+  function myReadyState() {
+    const me = onlinePlayers.find(p => p.id === myId);
+    return me ? !!me.ready : false;
+  }
+
+  function refreshLobby() {
+    renderRoster();
+    renderRulesSummary();
+    const n = onlinePlayers.length;
+    const everyoneReady = onlinePlayers.length >= 2 &&
+      onlinePlayers.every(p => p.isHost || p.ready);
+
+    // Host controls
+    $("editRulesBtn").style.display = isHost ? "" : "none";
+    $("readyBtn").style.display = isHost ? "none" : "";
+    if (isHost) {
       $("onlineStartBtn").style.display = "";
+      $("onlineStartBtn").disabled = !(n >= 2 && everyoneReady);
+      $("onlineStartBtn").style.opacity = (n >= 2 && everyoneReady) ? "1" : ".5";
+      $("lobbyHint").textContent =
+        n < 2 ? "Waiting for players to join (2–4)…" :
+        everyoneReady ? "Everyone's ready — tap Start!" :
+        "Waiting for all players to ready up…";
+    } else {
+      const r = myReadyState();
+      const btn = $("readyBtn");
+      btn.classList.toggle("is-ready", r);
+      btn.textContent = r ? "Ready ✓ (tap to cancel)" : "I'm Ready ✓";
+      $("onlineStartBtn").style.display = "none";
+      $("lobbyHint").textContent = r ? "Waiting for host to start…" : "Tap Ready when you're set.";
     }
+  }
+
+  function renderRoster() {
+    const c = $("rosterList");
+    if (!c) return;
+    c.innerHTML = "";
+    onlinePlayers.forEach((p, i) => {
+      const row = document.createElement("div");
+      row.className = "roster-row";
+      const isMe = p.id === myId;
+      let status;
+      if (p.isHost) status = `<div class="roster-status host">HOST</div>`;
+      else if (p.ready) status = `<div class="roster-status ready">READY ✓</div>`;
+      else status = `<div class="roster-status waiting">waiting…</div>`;
+      row.innerHTML = `
+        <div class="roster-av">${PLAYER_AVATARS[i % PLAYER_AVATARS.length]}</div>
+        <div class="roster-name">${isMe ? "You" : p.name}${isMe ? "<span class='roster-tag'>ME</span>" : ""}</div>
+        ${status}`;
+      c.appendChild(row);
+    });
+  }
+
+  function renderRulesSummary() {
+    const el = $("rulesSummary");
+    if (!el) return;
+    const modeNames = { none:"Classic Egyptian War", prize:"⬡ Prize Card Victory",
+      threshold:"⚡ Threshold State", alchemical:"✦ Alchemical Slaps" };
+    const r = settings.rules || {};
+    const active = [];
+    if (r.double) active.push("Doubles");
+    if (r.sandwich) active.push("Sandwiches");
+    if (r.marriage) active.push("Marriage");
+    if (r.divorce) active.push("Divorce");
+    let extra = "";
+    if (settings.mode === "prize") extra = ` · Prize rank: <b>${settings.prizeRank}</b>`;
+    el.innerHTML =
+      `<span class="rs-mode">${modeNames[settings.mode] || "Classic"}</span>` +
+      `Slaps: <b>${active.join(", ") || "none"}</b>${extra} · Decks: <b>${settings.numDecks}</b>` +
+      (isHost ? "" : `<br><span style="color:#6ba88a;font-size:11px;">Only the host can change rules.</span>`);
+  }
+
+  function toggleReady() {
+    if (isHost) return;
+    const next = !myReadyState();
+    send({ type:"READY", ready: next });
   }
 
   function setMode(mode) { hjMode = mode; }
@@ -2360,20 +2619,55 @@ const NET = (function(){
     setStatus("", "");
   }
 
+  function sendSettings() {
+    if (!isHost) return;
+    send({ type:"UPDATE_SETTINGS", settings:{
+      rules: settings.rules, mode: settings.mode,
+      prizeRank: settings.prizeRank, numDecks: settings.numDecks,
+    }});
+  }
+
   return { createRoom, joinRoom, startGame, playCard, slap, reconnect, setMode, disconnect,
+    toggleReady, sendSettings, refreshLobby, renderRulesSummary,
     get myId(){ return myId; },
+    get amHost(){ return isHost; },
+    get inLobby(){ return !!myRoomId && state !== "playing"; },
     get isOnline(){ return settings.playerMode === "online"; },
   };
 })();
+
+// ── Countdown overlay ──────────────────────────────────────────────────────
+function showCountdown(n) {
+  const ov = $("countdownOverlay"), num = $("countdownNum");
+  ov.classList.add("show");
+  num.classList.remove("go");
+  // restart pop animation
+  num.style.animation = "none"; void num.offsetWidth; num.style.animation = "";
+  if (n <= 0) { num.textContent = "GO!"; num.classList.add("go"); }
+  else num.textContent = String(n);
+}
+function hideCountdown() { $("countdownOverlay").classList.remove("show"); }
+
+// ── Host: edit rules from the lobby ────────────────────────────────────────
+window.openLobbySettings = function() {
+  if (!NET.amHost) return;
+  settingsFromLobby = true;
+  settingsFromGame = false;
+  buildRulePanel(); syncDiff(); syncDeckSeg(); syncModeOpts(); buildRankButtons();
+  $("onlineLobbyVeil").classList.add("hidden");
+  showVeil("settingsVeil");
+};
 
 // ── Online lobby UI helpers ───────────────────────────────────────────────
 window.setHJMode = function(mode) {
   NET.setMode(mode);
   $("hjHost").classList.toggle("sel", mode==="host");
   $("hjJoin").classList.toggle("sel", mode==="join");
+  $("hjHost").style.display = "";
+  $("hjJoin").style.display = "";
   $("hostPanel").style.display = mode==="host" ? "" : "none";
   $("joinPanel").style.display = mode==="join" ? "" : "none";
-  // Tear down any existing socket and reset the host panel to its pre-create state.
+  // Tear down any existing socket and reset both panels to pre-room state.
   NET.disconnect();
   $("onlineStatus").textContent = "";
   $("onlineStatus").className = "";
@@ -2383,13 +2677,16 @@ window.setHJMode = function(mode) {
   $("roomCodeDisplay").textContent = "----";
   $("roomCodeLabel").style.display = "none";
   $("hostWaitingMsg").style.display = "none";
+  $("roomArea").style.display = "none";
+  $("rosterList").innerHTML = "";
   $("onlineStartBtn").style.display = "none";
-  $("waitingList").innerHTML = "";
-  $("joinWaitingList").innerHTML = "";
+  $("readyBtn").style.display = "none";
+  $("editRulesBtn").style.display = "none";
 };
 
 window.onlineBack = function() {
   $("onlineLobbyVeil").classList.add("hidden");
+  resetArenaToLocal();
   selectMode("1p");
   showVeil("startVeil");
 };

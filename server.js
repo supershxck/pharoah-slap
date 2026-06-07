@@ -148,13 +148,27 @@ class Room {
     this.slapWindow = null;
 
     this.heartbeatInterval = null;
+    this.countdownTimer = null;
     this.cardsSinceLastAward = 0;
     this.judgmentActive = false;
   }
 
   addPlayer(id, name, ws) {
-    this.players.push({ id, name, deck: [], ws, clockOffset: 0, connected: true });
+    this.players.push({ id, name, deck: [], ws, clockOffset: 0, connected: true, ready: false });
     this.prizeCollected.push([]);
+  }
+
+  // Lobby roster sent to clients (id, name, ready, host flag).
+  lobbyPlayers() {
+    return this.players.map(p => ({
+      id: p.id, name: p.name, ready: !!p.ready, isHost: p.id === this.hostPlayerId,
+    }));
+  }
+
+  // Everyone except the host must be ready; the host is implicitly ready.
+  allReady() {
+    if (this.players.length < 2) return false;
+    return this.players.every(p => p.id === this.hostPlayerId || p.ready);
   }
 
   getPlayer(id) { return this.players.find(p => p.id === id); }
@@ -187,6 +201,27 @@ class Room {
   stopHeartbeat() {
     clearInterval(this.heartbeatInterval);
     this.heartbeatInterval = null;
+  }
+
+  // ── COUNTDOWN ──────────────────────────────────────────────────────────────
+  beginCountdown() {
+    if (this.phase !== "lobby") return;
+    this.phase = "countdown";
+    let n = 3;
+    this.broadcast({ type: "COUNTDOWN", n });
+    const tick = () => {
+      n--;
+      if (n > 0) {
+        this.broadcast({ type: "COUNTDOWN", n });
+        this.countdownTimer = setTimeout(tick, 1000);
+      } else {
+        this.broadcast({ type: "COUNTDOWN", n: 0 }); // "GO"
+        this.countdownTimer = setTimeout(() => {
+          if (this.phase === "countdown") this.startGame();
+        }, 700);
+      }
+    };
+    this.countdownTimer = setTimeout(tick, 1000);
   }
 
   // ── GAME START ─────────────────────────────────────────────────────────────
@@ -431,6 +466,7 @@ class Room {
   endGame(winnerIdx, title, subtitle) {
     if (this.phase === "over") return;
     this.phase = "over";
+    clearTimeout(this.countdownTimer);
     this.stopHeartbeat();
     const winner = winnerIdx != null ? this.players[winnerIdx] : null;
     this.broadcast({
@@ -507,7 +543,8 @@ wss.on("connection", (ws) => {
           type: "ROOM_CREATED",
           roomId: code,
           playerId,
-          players: room.players.map(p => ({ id: p.id, name: p.name })),
+          players: room.lobbyPlayers(),
+          settings: room.settings,
         }));
         console.log(`Room ${code} created by ${msg.playerName}`);
         break;
@@ -537,13 +574,14 @@ wss.on("connection", (ws) => {
           type: "JOIN_OK",
           roomId: code,
           playerId,
-          players: room.players.map(p => ({ id: p.id, name: p.name })),
+          hostId: room.hostPlayerId,
+          players: room.lobbyPlayers(),
           settings: room.settings,
         }));
 
         room.broadcast({
           type: "PLAYER_JOINED",
-          players: room.players.map(p => ({ id: p.id, name: p.name })),
+          players: room.lobbyPlayers(),
         }, playerId);
 
         console.log(`${msg.playerName} joined room ${code} (${room.players.length}/${MAX_PLAYERS})`);
@@ -562,8 +600,12 @@ wss.on("connection", (ws) => {
           ws.send(JSON.stringify({ type: "ERROR", code: "NOT_ENOUGH_PLAYERS", message: "Need at least 2 players." }));
           return;
         }
-        room.startGame();
-        console.log(`Game started in room ${roomId} (${room.players.length} players)`);
+        if (!room.allReady()) {
+          ws.send(JSON.stringify({ type: "ERROR", code: "NOT_ALL_READY", message: "All players must be ready." }));
+          return;
+        }
+        room.beginCountdown();
+        console.log(`Countdown started in room ${roomId} (${room.players.length} players)`);
         break;
       }
 
@@ -590,7 +632,21 @@ wss.on("connection", (ws) => {
         const room = rooms.get(roomId);
         if (!room || room.phase !== "lobby" || playerId !== room.hostPlayerId) return;
         Object.assign(room.settings, msg.settings || {});
+        // Rules changed — clear everyone's ready so they re-confirm.
+        room.players.forEach(p => { if (p.id !== room.hostPlayerId) p.ready = false; });
         room.broadcast({ type: "SETTINGS_UPDATED", settings: room.settings });
+        room.broadcast({ type: "LOBBY_UPDATE", players: room.lobbyPlayers() });
+        break;
+      }
+
+      // ── Ready toggle (guests; host is always implicitly ready) ─────────
+      case "READY": {
+        const room = rooms.get(roomId);
+        if (!room || room.phase !== "lobby") return;
+        const p = room.getPlayer(playerId);
+        if (!p) return;
+        if (p.id !== room.hostPlayerId) p.ready = (msg.ready !== false);
+        room.broadcast({ type: "LOBBY_UPDATE", players: room.lobbyPlayers(), allReady: room.allReady() });
         break;
       }
 
@@ -637,13 +693,29 @@ wss.on("connection", (ws) => {
     const p = room.getPlayer(playerId);
     if (p) p.connected = false;
     room.broadcast({ type: "PLAYER_DISCONNECTED", playerId }, playerId);
-    // If host disconnects in lobby, migrate host to next connected player
-    if (playerId === room.hostPlayerId && room.phase === "lobby") {
-      const next = room.players.find(p => p.id !== playerId && p.connected);
-      if (next) {
-        room.hostPlayerId = next.id;
-        room.send(next.id, { type: "YOU_ARE_HOST" });
+    // In the lobby, drop disconnected players entirely so the roster stays clean.
+    if (room.phase === "lobby" || room.phase === "countdown") {
+      // Cancel any running countdown — roster changed.
+      if (room.phase === "countdown") {
+        clearTimeout(room.countdownTimer);
+        room.phase = "lobby";
+        room.broadcast({ type: "COUNTDOWN_CANCELLED" });
       }
+      const idx = room.getPlayerIdx(playerId);
+      if (idx >= 0) {
+        room.players.splice(idx, 1);
+        room.prizeCollected.splice(idx, 1);
+      }
+      // Migrate host if needed.
+      if (playerId === room.hostPlayerId) {
+        const next = room.players.find(pl => pl.connected);
+        if (next) {
+          room.hostPlayerId = next.id;
+          next.ready = false;
+          room.send(next.id, { type: "YOU_ARE_HOST" });
+        }
+      }
+      room.broadcast({ type: "LOBBY_UPDATE", players: room.lobbyPlayers(), allReady: room.allReady() });
     }
     // If all players disconnect from a lobby, clean up immediately
     if (room.phase === "lobby" && room.players.every(p => !p.connected)) {

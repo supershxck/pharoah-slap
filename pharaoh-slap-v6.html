@@ -2260,10 +2260,17 @@ window.onlineBack = function() {
 
 // Pre-fill server URL from localStorage if saved
 (function(){
-  const saved = localStorage.getItem("ps_server_url");
   const el = $("serverUrlInput");
-  if (el && saved) el.value = saved;
-  if (el) el.addEventListener("change", ()=> localStorage.setItem("ps_server_url", el.value.trim()));
+  if (el) {
+    // Auto-detect: if served from a real host, use that host as the WS server
+    const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const autoUrl = isLocal
+      ? "ws://localhost:8080"
+      : location.origin.replace(/^http/, "ws");
+    const saved = localStorage.getItem("ps_server_url");
+    el.value = saved || autoUrl;
+    el.addEventListener("change", () => localStorage.setItem("ps_server_url", el.value.trim()));
+  }
 })();
 
 // ── Wire online mode into play/slap actions ──────────────────────────────

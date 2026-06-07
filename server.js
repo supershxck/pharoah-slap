@@ -41,6 +41,8 @@
 
 const WebSocket = require("ws");
 const http = require("http");
+const fs = require("fs");
+const path = require("path");
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8080;
@@ -444,14 +446,24 @@ class Room {
 }
 
 // ─── HTTP SERVER (health check for Render) ───────────────────────────────────
+const HTML_FILE = path.join(__dirname, "pharaoh-slap-v6.html");
+
 const server = http.createServer((req, res) => {
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "text/plain" });
     res.end("OK");
-  } else {
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    res.end("Pharaoh Slap server - OK");
+    return;
   }
+  // Serve the game for all other routes
+  fs.readFile(HTML_FILE, (err, data) => {
+    if (err) {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.end("pharaoh-slap-v6.html not found next to server.js");
+      return;
+    }
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(data);
+  });
 });
 
 // ─── WEBSOCKET SERVER ────────────────────────────────────────────────────────

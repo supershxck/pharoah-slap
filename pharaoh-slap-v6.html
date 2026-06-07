@@ -2885,7 +2885,7 @@
             id="hostWaitingMsg"
             style="font-size: 12px; color: #6ba88a; margin: 0; display: none"
           >
-            Waiting for players… (2–4)
+            Waiting for players… (2–4 players)
           </p>
         </div>
 
@@ -5472,6 +5472,11 @@
                 crb.disabled = false;
                 crb.style.display = "";
               }
+              // Stop any running generator and hide the code display
+              stopRoomCodeGenerator();
+              $("roomCodeDisplay").style.display = "none";
+              $("roomCodeLabel").style.display = "none";
+              $("hostWaitingMsg").style.display = "none";
             }
             ws.onclose = () => {
               clearInterval(pingInterval);
@@ -5528,6 +5533,8 @@
             const btn = $("createRoomBtn");
             if (btn) btn.disabled = true;
             setStatus("Connecting to server…", "spin");
+            // Start the visual room code generator animation immediately
+            startRoomCodeGenerator();
             // Best-effort wake (fire-and-forget; does NOT gate the socket — a CORS-blocked
             // or slow /health must never stop us from sending CREATE_ROOM).
             pingHealth();
@@ -5545,6 +5552,46 @@
                 },
               });
             });
+          }
+
+          // Room code generator — visual animation while waiting for server
+          const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+          let roomCodeGenInterval = null;
+          let roomCodeGenStartTime = 0;
+          const ROOM_CODE_GEN_DURATION = 1200;
+          const ROOM_CODE_GEN_TICK = 50;
+
+          function startRoomCodeGenerator() {
+            const display = $("roomCodeDisplay");
+            const label = $("roomCodeLabel");
+            if (!display) return;
+            display.style.display = "";
+            display.textContent = "----";
+            label.style.display = "";
+            label.textContent = "generating…";
+            roomCodeGenStartTime = Date.now();
+            roomCodeGenInterval = setInterval(() => {
+              const elapsed = Date.now() - roomCodeGenStartTime;
+              const progress = Math.min(elapsed / ROOM_CODE_GEN_DURATION, 1);
+              const chars = [];
+              for (let i = 0; i < 4; i++)
+                chars.push(CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]);
+              display.textContent = chars.join("");
+              if (progress >= 1) {
+                clearInterval(roomCodeGenInterval);
+                roomCodeGenInterval = null;
+                label.textContent = "share this code";
+              }
+            }, ROOM_CODE_GEN_TICK);
+          }
+
+          function stopRoomCodeGenerator() {
+            if (roomCodeGenInterval) {
+              clearInterval(roomCodeGenInterval);
+              roomCodeGenInterval = null;
+            }
+            const label = $("roomCodeLabel");
+            if (label) label.textContent = "share this code";
           }
 
           // Optional, fire-and-forget warm-up. Never awaited; never blocks the socket.
@@ -5614,6 +5661,8 @@
                 myRoomId = msg.roomId;
                 isHost = true;
                 if (msg.settings) Object.assign(settings, msg.settings);
+                // Stop the room code generator and show the real server code
+                stopRoomCodeGenerator();
                 $("createRoomBtn").style.display = "none";
                 $("roomCodeDisplay").style.display = "";
                 $("roomCodeDisplay").textContent = msg.roomId;
@@ -5918,6 +5967,11 @@
                   crb.disabled = false;
                   crb.style.display = "";
                 }
+                // Stop the generator animation on error
+                stopRoomCodeGenerator();
+                $("roomCodeDisplay").style.display = "none";
+                $("roomCodeLabel").style.display = "none";
+                $("hostWaitingMsg").style.display = "none";
                 break;
               }
             }
@@ -6083,7 +6137,7 @@
                 n >= 2 && everyoneReady ? "1" : ".5";
               $("lobbyHint").textContent =
                 n < 2
-                  ? "Waiting for players to join (2–4)…"
+                  ? "Waiting for at least 1 more player to join (2–4 total)…"
                   : everyoneReady
                     ? "Everyone's ready — tap Start!"
                     : "Waiting for all players to ready up…";
@@ -6271,6 +6325,13 @@
         };
 
         window.onlineBack = function () {
+          // Stop any running room code generator and reset lobby UI
+          stopRoomCodeGenerator();
+          $("roomCodeDisplay").style.display = "none";
+          $("roomCodeLabel").style.display = "none";
+          $("hostWaitingMsg").style.display = "none";
+          $("createRoomBtn").style.display = "";
+          $("createRoomBtn").disabled = false;
           $("onlineLobbyVeil").classList.add("hidden");
           resetArenaToLocal();
           selectMode("1p");

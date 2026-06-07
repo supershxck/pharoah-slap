@@ -1843,8 +1843,13 @@ const NET = (function(){
   function connect(afterConnectFn) {
     const url = serverUrl();
     setStatus("Connecting…","spin");
-    if (ws) { try{ws.close();}catch(e){} }
-    ws = new WebSocket(url);
+    if (ws) { try{ws.close();}catch(e){} ws = null; }
+    try {
+      ws = new WebSocket(url);
+    } catch(e) {
+      setStatus("Bad server URL: " + url, "error");
+      return;
+    }
     ws.onopen = () => {
       reconnectAttempts = 0;
       setStatus("Connected","success");
@@ -1856,7 +1861,7 @@ const NET = (function(){
       let msg; try{msg=JSON.parse(e.data);}catch{return;}
       handle(msg);
     };
-    ws.onerror = () => setStatus("Connection error","error");
+    ws.onerror = (e) => setStatus("Connection error — check server URL","error");
     ws.onclose = () => {
       clearInterval(pingInterval);
       if (intentionalDisconnect) {
@@ -1900,20 +1905,30 @@ const NET = (function(){
   // ── Lobby actions ─────────────────────────────────────────────────────────
   function createRoom() {
     const name = ($("onlineNameInput").value.trim() || "Pharaoh").slice(0,20);
-    connect(() => {
-      send({ type:"CREATE_ROOM", playerName:name, settings:{
-        rules: settings.rules, mode: settings.mode,
-        prizeRank: settings.prizeRank, numDecks: settings.numDecks,
-      }});
+    setStatus("Starting room…", "spin");
+    const httpUrl = serverUrl().replace(/^ws/,"http");
+    fetch(httpUrl + "/health").catch(()=>{}).finally(() => {
+      connect(() => {
+        send({ type:"CREATE_ROOM", playerName:name, settings:{
+          rules: settings.rules, mode: settings.mode,
+          prizeRank: settings.prizeRank, numDecks: settings.numDecks,
+        }});
+      });
     });
   }
 
   function joinRoom() {
     const name = ($("onlineNameInput").value.trim() || "Pharaoh").slice(0,20);
     const code = ($("codeInput").value || "").toUpperCase().trim();
-    if (code.length !== 4) { setStatus("Enter a 4-letter room code","error"); return; }
-    connect(() => {
-      send({ type:"JOIN_ROOM", roomId:code, playerName:name });
+    if (!code) { setStatus("Enter a room code","error"); return; }
+    if (code.length !== 4) { setStatus("Code must be 4 letters","error"); return; }
+    setStatus("Joining " + code + "…", "spin");
+    // Wake Render from sleep before upgrading to WebSocket
+    const httpUrl = serverUrl().replace(/^ws/,"http");
+    fetch(httpUrl + "/health").catch(()=>{}).finally(() => {
+      connect(() => {
+        send({ type:"JOIN_ROOM", roomId:code, playerName:name });
+      });
     });
   }
 
@@ -2166,7 +2181,7 @@ const NET = (function(){
       }
 
       case "ERROR": {
-        setStatus(msg.message, "error");
+        setStatus("⚠ " + (msg.message || msg.code || "Unknown error"), "error");
         break;
       }
     }

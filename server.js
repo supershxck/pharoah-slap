@@ -50,7 +50,7 @@ const PORT = process.env.PORT || 8080;
 // Slap arbitration window: slaps within this many ms of each other are "simultaneous"
 // → server picks the lower adjusted timestamp (earlier reaction wins)
 const SLAP_GRACE_MS = 30;
-// Max players per room
+// Max players per room (host + 2–3 joiners = 3–4 total)
 const MAX_PLAYERS = 4;
 // Heartbeat interval
 const HEARTBEAT_MS = 5000;
@@ -762,12 +762,12 @@ wss.on("connection", (ws, req) => {
           );
           return;
         }
-        if (room.players.length < 2) {
+        if (room.players.length < 3) {
           ws.send(
             JSON.stringify({
               type: "ERROR",
               code: "NOT_ENOUGH_PLAYERS",
-              message: "Need at least 2 players.",
+              message: "Need at least 3 players total (host + 2).",
             }),
           );
           return;

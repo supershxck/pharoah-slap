@@ -43,6 +43,7 @@ const WebSocket = require("ws");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8080;
@@ -497,7 +498,7 @@ wss.on("connection", (ws) => {
       // ── Create room ────────────────────────────────────────────────────
       case "CREATE_ROOM": {
         const code = makeRoomCode();
-        playerId = crypto.randomUUID ? crypto.randomUUID() : uid();
+        playerId = makePlayerId();
         roomId = code;
         const room = new Room(code, playerId, msg.settings || {});
         room.addPlayer(playerId, sanitizeName(msg.playerName), ws);
@@ -528,7 +529,7 @@ wss.on("connection", (ws) => {
           ws.send(JSON.stringify({ type: "ERROR", code: "ROOM_FULL", message: "Room is full." }));
           return;
         }
-        playerId = crypto.randomUUID ? crypto.randomUUID() : uid();
+        playerId = makePlayerId();
         roomId = code;
         room.addPlayer(playerId, sanitizeName(msg.playerName), ws);
 
@@ -662,6 +663,12 @@ function sanitizeName(name) {
 let _uidCounter = 0;
 function uid() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}-${_uidCounter++}`;
+}
+function makePlayerId() {
+  try {
+    if (crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  } catch (e) {}
+  return uid();
 }
 
 // ─── START ────────────────────────────────────────────────────────────────────

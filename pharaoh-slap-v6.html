@@ -16,12 +16,18 @@
   --p1:#5fa8ff; --p2:#fb923c; --p3:#a78bfa;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{margin:0;height:100%;overflow:hidden;}
+html,body{margin:0;height:100%;overflow:hidden;
+  /* iOS Safari: dvh tracks the visible viewport (excludes the dynamic toolbar) */
+  height:100dvh;min-height:100dvh;
+  overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
 body{
   font-family:"Trebuchet MS","Segoe UI",sans-serif;color:var(--cream);
-  user-select:none;touch-action:manipulation;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  -webkit-text-size-adjust:100%;
   background:radial-gradient(140% 110% at 50% 38%, var(--felt-hi) 0%, var(--felt) 38%, var(--felt-lo) 100%);
 }
+/* Never let buttons trigger iOS text selection / callout on long-press */
+button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background-image:
     repeating-linear-gradient(45deg, #ffffff06 0 2px, #0000 2px 4px),
@@ -238,11 +244,12 @@ h1 .sub{display:block;font-size:.4em;letter-spacing:.45em;color:#cdb877;margin-t
 #judgmentBanner .jt{font-family:Georgia,serif;font-size:20px;color:var(--gold-bright);letter-spacing:.1em;font-weight:700;}
 #judgmentBanner .js{font-size:11px;color:#d6ecdf;letter-spacing:.1em;margin-top:4px;}
 
-/* CONTROLS — 2P layout */
+/* CONTROLS */
 .controls{display:flex;gap:14px;padding:12px 16px calc(14px + env(safe-area-inset-bottom));}
-.btn{flex:1;border:none;border-radius:20px;padding:20px 8px;font-family:Georgia,serif;
-  font-size:clamp(17px,4.6vw,23px);font-weight:800;letter-spacing:.12em;text-transform:uppercase;
-  color:#fff;cursor:pointer;position:relative;transition:transform .06s,filter .15s;text-shadow:0 2px 6px #0008;}
+.btn{flex:1;border:none;border-radius:20px;padding:22px 8px;min-height:84px;font-family:Georgia,serif;
+  font-size:clamp(18px,5vw,24px);font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:#fff;cursor:pointer;position:relative;transition:transform .06s,filter .15s;text-shadow:0 2px 6px #0008;
+  -webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-touch-callout:none;}
 .btn:active{transform:scale(.95);}
 .btn:disabled{filter:grayscale(.7) brightness(.5);}
 .btn .sub{display:block;font-family:"Trebuchet MS",sans-serif;font-size:.42em;letter-spacing:.18em;font-weight:400;opacity:.8;margin-top:3px;}
@@ -509,6 +516,41 @@ h1 .sub{display:block;font-size:.4em;letter-spacing:.45em;color:#cdb877;margin-t
 #disconnectedOverlay .dc-title{font-family:Georgia,serif;color:var(--gold);font-size:22px;
   letter-spacing:.1em;font-weight:700;}
 #disconnectedOverlay .dc-sub{font-size:12px;letter-spacing:.12em;color:#8fb6a3;}
+
+/* ── MOBILE / TOUCH TUNING ────────────────────────────────────────────────── */
+/* Prevent iOS double-tap-to-zoom on every interactive element */
+button,.btn,.pmode-btn,.hj-btn,.start-btn,.ghost-btn,.iconbtn,.deck-btn,
+.mode-opt,.toggle,input,summary{touch-action:manipulation;}
+
+/* All text inputs at 16px+ so iOS Safari doesn't zoom the page on focus */
+input,textarea,select{font-size:16px;}
+
+/* Phones (portrait) — give the action buttons more vertical bite */
+@media (max-width:600px){
+  .controls{gap:12px;padding:10px 12px calc(12px + env(safe-area-inset-bottom));}
+  .btn{min-height:92px;padding:22px 6px;border-radius:18px;font-size:clamp(19px,5.6vw,24px);}
+  .pmode-row{gap:10px;}
+  .pmode-btn{padding:16px 12px;font-size:14px;max-width:none;}
+  .pmode-btn .pm-icon{font-size:26px;}
+  .pmode-btn .pm-label{font-size:16px;}
+  .hj-btn{padding:16px 10px;font-size:16px;}
+  .start-btn{padding:16px 32px;font-size:18px;width:100%;max-width:320px;}
+  .ghost-btn{padding:12px 24px;font-size:15px;}
+  header{padding:6px 12px 0;}
+}
+
+/* Very short / landscape phones — keep the action row reachable */
+@media (max-height:520px){
+  .btn{min-height:64px;padding:14px 6px;}
+  header{padding:2px 12px 0;}
+  h1{font-size:clamp(15px,4vw,22px);}
+}
+
+/* Tablets (iPad) — center and cap the play field width so it isn't a stretched mess */
+@media (min-width:820px){
+  .controls{max-width:680px;margin:0 auto;width:100%;}
+  .pmode-row{max-width:520px;margin:4px auto;}
+}
 </style>
 </head>
 <body>
@@ -598,19 +640,7 @@ h1 .sub{display:block;font-size:.4em;letter-spacing:.45em;color:#cdb877;margin-t
         <div class="pm-icon">𓂀</div>
         <span class="pm-label">1 Player</span>
         <span class="pm-sub">vs Anubis AI</span>
-        <span class="pm-sub" style="margin-top:4px;color:#6ba88a;">A play · S slap</span>
-      </button>
-      <button class="pmode-btn" id="pmBtn2P" onclick="selectMode('2p')">
-        <div class="pm-icon">𓂀𓂀</div>
-        <span class="pm-label">2 Players</span>
-        <span class="pm-sub">local split-keyboard</span>
-        <span class="pm-sub" style="margin-top:4px;color:#6ba88a;">A/S · K/L</span>
-      </button>
-      <button class="pmode-btn" id="pmBtn3P" onclick="selectMode('3p')">
-        <div class="pm-icon">𓂀𓂝⚔</div>
-        <span class="pm-label">2 vs Anubis</span>
-        <span class="pm-sub">coop vs AI</span>
-        <span class="pm-sub" style="margin-top:4px;color:#a78bfa;">A/S · K/L vs AI</span>
+        <span class="pm-sub" style="margin-top:4px;color:#6ba88a;">tap Play · tap Slap</span>
       </button>
       <button class="pmode-btn" id="pmBtnOnline" onclick="selectMode('online')">
         <div class="pm-icon">🌐</div>
@@ -702,14 +732,15 @@ h1 .sub{display:block;font-size:.4em;letter-spacing:.45em;color:#cdb877;margin-t
         placeholder="Enter your name" autocomplete="off" autocorrect="off" spellcheck="false">
     </div>
 
-    <!-- Server URL (small, collapsible) -->
-    <div class="olobby-section">
-      <h3 style="font-size:11px;color:#6ba88a;letter-spacing:.18em;">SERVER</h3>
-      <input id="serverUrlInput" class="name-input" type="text"
-        style="font-size:12px;padding:8px 14px;letter-spacing:.04em;"
+    <!-- Server URL (collapsed by default — URL is preset) -->
+    <details class="olobby-section" style="text-align:left;">
+      <summary style="font-size:11px;color:#6ba88a;letter-spacing:.18em;cursor:pointer;list-style:none;">⚙ ADVANCED · SERVER</summary>
+      <input id="serverUrlInput" class="name-input" type="url" inputmode="url"
+        autocapitalize="off" autocorrect="off" spellcheck="false"
+        style="font-size:16px;padding:10px 14px;letter-spacing:.02em;margin-top:8px;"
         placeholder="wss://your-app.onrender.com"
         value="">
-    </div>
+    </details>
 
     <!-- Host / Join toggle -->
     <div class="hj-row">
@@ -723,9 +754,12 @@ h1 .sub{display:block;font-size:.4em;letter-spacing:.45em;color:#cdb877;margin-t
 
     <!-- HOST panel -->
     <div id="hostPanel" class="olobby-section" style="align-items:center;">
-      <div id="roomCodeDisplay">----</div>
-      <div id="roomCodeLabel" class="hieroglyph" style="font-size:11px;">share this code</div>
-      <p style="font-size:12px;color:#6ba88a;margin:0;">Waiting for players… (2–4)</p>
+      <button class="start-btn" id="createRoomBtn" onclick="NET.createRoom()">
+        Create Room
+      </button>
+      <div id="roomCodeDisplay" style="display:none;">----</div>
+      <div id="roomCodeLabel" class="hieroglyph" style="font-size:11px;display:none;">share this code</div>
+      <p id="hostWaitingMsg" style="font-size:12px;color:#6ba88a;margin:0;display:none;">Waiting for players… (2–4)</p>
       <div id="waitingList"></div>
       <button class="start-btn" id="onlineStartBtn" style="display:none;" onclick="NET.startGame()">
         Start Game
@@ -900,15 +934,10 @@ const confettiParts=[];
 
 // ─── MODE SELECTOR (start screen) ─────────────────────────────────────────────
 window.selectMode=function(m){
+  // Local 2P / 2-vs-AI modes were removed — only 1p and online remain.
+  if(m==="2p"||m==="3p")m="1p";
   settings.playerMode=m;
   $("pmBtn1P").classList.toggle("sel",m==="1p");
-  $("pmBtn1P").classList.remove("p2-sel","p3-sel");
-  $("pmBtn2P").classList.toggle("sel",m==="2p");
-  $("pmBtn2P").classList.toggle("p2-sel",m==="2p");
-  $("pmBtn2P").classList.remove("p3-sel");
-  $("pmBtn3P").classList.toggle("sel",m==="3p");
-  $("pmBtn3P").classList.toggle("p3-sel",m==="3p");
-  $("pmBtn3P").classList.remove("p2-sel");
   const onlineBtn=$("pmBtnOnline");
   if(onlineBtn){
     onlineBtn.classList.toggle("sel",m==="online");
@@ -918,7 +947,7 @@ window.selectMode=function(m){
   if(m==="online"){
     showVeil(null);
     $("onlineLobbyVeil").classList.remove("hidden");
-    setHJMode("host"); // connects + creates room; user can switch to Join to cancel
+    setHJMode("host"); // shows the host panel with a "Create Room" button (no auto-connect)
   }
 };
 
@@ -1834,23 +1863,50 @@ const NET = (function(){
   }
   function serverUrl() {
     const el = $("serverUrlInput");
-    const raw = (el ? el.value.trim() : "") || "ws://localhost:8080";
-    return raw.replace(/^http/,"ws");
+    let raw = (el ? el.value.trim() : "") || (typeof computeServerUrl === "function" ? computeServerUrl() : "wss://pharoah-slap.onrender.com");
+    raw = raw.replace(/^http/, "ws");           // http(s):// → ws(s)://
+    raw = raw.replace(/\/+$/, "");              // strip any trailing slashes
+    // iOS hard rule: if this page is https, the socket MUST be wss. Force it.
+    if (location.protocol === "https:" && raw.startsWith("ws://")) {
+      raw = "wss://" + raw.slice(5);
+    }
+    return raw;
   }
   function adjustedNow() { return Date.now() + clockOffset; }
 
   // ── Connect ──────────────────────────────────────────────────────────────
+  let connectTimeout = null;
   function connect(afterConnectFn) {
     const url = serverUrl();
     setStatus("Connecting…","spin");
-    if (ws) { try{ws.close();}catch(e){} ws = null; }
+    if (ws) { try{ws.onopen=ws.onclose=ws.onerror=ws.onmessage=null; ws.close();}catch(e){} ws = null; }
+    clearTimeout(connectTimeout);
+    let opened = false;
     try {
       ws = new WebSocket(url);
     } catch(e) {
-      setStatus("Bad server URL: " + url, "error");
+      setStatus("Bad server address: " + url, "error");
       return;
     }
+    const thisWs = ws;
+    // Render free tier sleeps — first connect can take a while to wake the server.
+    connectTimeout = setTimeout(() => {
+      if (!opened && thisWs.readyState !== WebSocket.OPEN) {
+        setStatus("Still waking the server… give it a few more seconds.","spin");
+      }
+    }, 6000);
+    // Hard give-up after 45s.
+    const hardTimeout = setTimeout(() => {
+      if (!opened) {
+        try{ thisWs.close(); }catch(e){}
+        setStatus("Couldn't reach the server. Check your connection and tap again.","error");
+      }
+    }, 45000);
+
     ws.onopen = () => {
+      opened = true;
+      clearTimeout(connectTimeout);
+      clearTimeout(hardTimeout);
       reconnectAttempts = 0;
       setStatus("Connected","success");
       doPing();
@@ -1861,9 +1917,14 @@ const NET = (function(){
       let msg; try{msg=JSON.parse(e.data);}catch{return;}
       handle(msg);
     };
-    ws.onerror = (e) => setStatus("Connection error — check server URL","error");
+    ws.onerror = () => {
+      // iOS surfaces almost all socket failures as a generic error event.
+      if (!opened) setStatus("Can't connect yet — the server may be waking up. Tap again in a moment.","error");
+    };
     ws.onclose = () => {
       clearInterval(pingInterval);
+      clearTimeout(connectTimeout);
+      clearTimeout(hardTimeout);
       if (intentionalDisconnect) {
         intentionalDisconnect = false;
         return; // suppress "Disconnected" for deliberate tab-switch etc.
@@ -1871,6 +1932,8 @@ const NET = (function(){
       if (state === "playing" && settings.playerMode === "online") {
         $("disconnectedOverlay").classList.add("show");
         scheduleReconnect();
+      } else if (!opened) {
+        // never connected at all — leave the helpful onerror message in place
       } else {
         setStatus("Disconnected","error");
       }
@@ -1905,9 +1968,10 @@ const NET = (function(){
   // ── Lobby actions ─────────────────────────────────────────────────────────
   function createRoom() {
     const name = ($("onlineNameInput").value.trim() || "Pharaoh").slice(0,20);
-    setStatus("Starting room…", "spin");
-    const httpUrl = serverUrl().replace(/^ws/,"http");
-    fetch(httpUrl + "/health").catch(()=>{}).finally(() => {
+    const btn = $("createRoomBtn");
+    if (btn) btn.disabled = true;
+    setStatus("Waking server & creating room…", "spin");
+    wakeServer(() => {
       connect(() => {
         send({ type:"CREATE_ROOM", playerName:name, settings:{
           rules: settings.rules, mode: settings.mode,
@@ -1917,15 +1981,36 @@ const NET = (function(){
     });
   }
 
+  // Wake a sleeping Render dyno before opening the WebSocket. iOS Safari times out
+  // WS upgrades against a cold server, so we poll /health (with a short timeout)
+  // until it answers, then proceed. Always proceeds after a few tries regardless.
+  function wakeServer(done) {
+    const httpUrl = serverUrl().replace(/^ws/, "http");
+    let tries = 0;
+    const attempt = () => {
+      tries++;
+      const ctrl = ("AbortController" in window) ? new AbortController() : null;
+      const t = setTimeout(() => { if (ctrl) ctrl.abort(); }, 4000);
+      fetch(httpUrl + "/health", { signal: ctrl ? ctrl.signal : undefined, cache: "no-store" })
+        .then(r => { clearTimeout(t); if (r && r.ok) { done(); } else { retry(); } })
+        .catch(() => { clearTimeout(t); retry(); });
+    };
+    const retry = () => {
+      if (tries >= 8) { done(); return; }      // give up waking, try the socket anyway
+      setStatus(`Waking server… (${tries})`, "spin");
+      setTimeout(attempt, 1500);
+    };
+    attempt();
+  }
+
   function joinRoom() {
     const name = ($("onlineNameInput").value.trim() || "Pharaoh").slice(0,20);
     const code = ($("codeInput").value || "").toUpperCase().trim();
     if (!code) { setStatus("Enter a room code","error"); return; }
     if (code.length !== 4) { setStatus("Code must be 4 letters","error"); return; }
-    setStatus("Joining " + code + "…", "spin");
-    // Wake Render from sleep before upgrading to WebSocket
-    const httpUrl = serverUrl().replace(/^ws/,"http");
-    fetch(httpUrl + "/health").catch(()=>{}).finally(() => {
+    setStatus("Waking server & joining " + code + "…", "spin");
+    // Wake Render from sleep before upgrading to WebSocket (critical on iOS).
+    wakeServer(() => {
       connect(() => {
         send({ type:"JOIN_ROOM", roomId:code, playerName:name });
       });
@@ -1964,7 +2049,11 @@ const NET = (function(){
         myId = msg.playerId;
         myRoomId = msg.roomId;
         isHost = true;
+        $("createRoomBtn").style.display = "none";
+        $("roomCodeDisplay").style.display = "";
         $("roomCodeDisplay").textContent = msg.roomId;
+        $("roomCodeLabel").style.display = "";
+        $("hostWaitingMsg").style.display = "";
         setStatus("Room ready — share the code!","success");
         $("onlineStartBtn").style.display = "none";
         renderWaitingList(msg.players || [], $("waitingList"), true);
@@ -2182,6 +2271,11 @@ const NET = (function(){
 
       case "ERROR": {
         setStatus("⚠ " + (msg.message || msg.code || "Unknown error"), "error");
+        // Re-enable Create Room so the host can try again after a failure.
+        const crb = $("createRoomBtn");
+        if (crb && $("roomCodeDisplay").style.display === "none") {
+          crb.disabled = false; crb.style.display = "";
+        }
         break;
       }
     }
@@ -2279,15 +2373,19 @@ window.setHJMode = function(mode) {
   $("hjJoin").classList.toggle("sel", mode==="join");
   $("hostPanel").style.display = mode==="host" ? "" : "none";
   $("joinPanel").style.display = mode==="join" ? "" : "none";
-  if (mode === "host") {
-    // (Re-)connect and create a room
-    $("roomCodeDisplay").textContent = "----";
-    NET.createRoom();
-  } else {
-    // Switching to Join — disconnect host socket so guest starts fresh
-    NET.disconnect();
-    $("onlineStatus").textContent = "";
-  }
+  // Tear down any existing socket and reset the host panel to its pre-create state.
+  NET.disconnect();
+  $("onlineStatus").textContent = "";
+  $("onlineStatus").className = "";
+  $("createRoomBtn").style.display = "";
+  $("createRoomBtn").disabled = false;
+  $("roomCodeDisplay").style.display = "none";
+  $("roomCodeDisplay").textContent = "----";
+  $("roomCodeLabel").style.display = "none";
+  $("hostWaitingMsg").style.display = "none";
+  $("onlineStartBtn").style.display = "none";
+  $("waitingList").innerHTML = "";
+  $("joinWaitingList").innerHTML = "";
 };
 
 window.onlineBack = function() {
@@ -2296,18 +2394,35 @@ window.onlineBack = function() {
   showVeil("startVeil");
 };
 
-// Pre-fill server URL from localStorage if saved
+// Default production server (Render). Players connect here unless served from the same host.
+const DEFAULT_SERVER_URL = "wss://pharoah-slap.onrender.com";
+
+// Compute the best server URL for this device/context.
+function computeServerUrl(){
+  const host = location.hostname;
+  const isLocal = host === "localhost" || host === "127.0.0.1" || host === "";
+  if (isLocal) return "ws://localhost:8080";
+  // If the page is served from a real https/http host (e.g. opened via the Render URL
+  // or any tunnel), use that same origin — guarantees protocol match (wss on https),
+  // which is REQUIRED on iOS Safari (it blocks ws:// from an https:// page).
+  if (location.protocol === "https:" || location.protocol === "http:") {
+    return location.origin.replace(/^http/, "ws");
+  }
+  // Opened from a local file (file://) on a phone, etc. — fall back to the known server.
+  return DEFAULT_SERVER_URL;
+}
+
+// Pre-fill server URL from localStorage if saved, else auto-detected default.
 (function(){
   const el = $("serverUrlInput");
   if (el) {
-    // Auto-detect: if served from a real host, use that host as the WS server
-    const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-    const autoUrl = isLocal
-      ? "ws://localhost:8080"
-      : location.origin.replace(/^http/, "ws");
     const saved = localStorage.getItem("ps_server_url");
-    el.value = saved || autoUrl;
-    el.addEventListener("change", () => localStorage.setItem("ps_server_url", el.value.trim()));
+    el.value = (saved && saved.trim()) || computeServerUrl();
+    el.addEventListener("change", () => {
+      const v = el.value.trim();
+      if (v) localStorage.setItem("ps_server_url", v);
+      else localStorage.removeItem("ps_server_url");
+    });
   }
 })();
 

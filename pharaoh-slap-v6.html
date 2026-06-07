@@ -1981,19 +1981,20 @@ const NET = (function(){
       return;
     }
     const thisWs = ws;
-    // Render free tier sleeps — first connect can take a while to wake the server.
+    // Render free tier sleeps — the first connect can take 30–60s to wake the dyno.
     connectTimeout = setTimeout(() => {
       if (!opened && thisWs.readyState !== WebSocket.OPEN) {
-        setStatus("Still waking the server… give it a few more seconds.","spin");
+        setStatus("Server is waking up (free tier) — this can take up to a minute…","spin");
       }
     }, 6000);
-    // Hard give-up after 45s.
+    // Hard give-up after 70s (covers a full Render cold start).
     const hardTimeout = setTimeout(() => {
       if (!opened) {
         try{ thisWs.close(); }catch(e){}
-        setStatus("Couldn't reach the server. Check your connection and tap again.","error");
+        setStatus("Couldn't reach the server. Tap Create Room to try again.","error");
+        reenableCreate();
       }
-    }, 45000);
+    }, 70000);
 
     ws.onopen = () => {
       opened = true;
@@ -2013,6 +2014,10 @@ const NET = (function(){
       // iOS surfaces almost all socket failures as a generic error event.
       if (!opened) setStatus("Can't connect yet — the server may be waking up. Tap again in a moment.","error");
     };
+    function reenableCreate(){
+      const crb = $("createRoomBtn");
+      if (crb && $("roomCodeDisplay").style.display === "none") { crb.disabled = false; crb.style.display = ""; }
+    }
     ws.onclose = () => {
       clearInterval(pingInterval);
       clearTimeout(connectTimeout);
@@ -2026,6 +2031,7 @@ const NET = (function(){
         scheduleReconnect();
       } else if (!opened) {
         // never connected at all — leave the helpful onerror message in place
+        reenableCreate();
       } else {
         setStatus("Disconnected","error");
       }
@@ -2062,37 +2068,26 @@ const NET = (function(){
     const name = ($("onlineNameInput").value.trim() || "Pharaoh").slice(0,20);
     const btn = $("createRoomBtn");
     if (btn) btn.disabled = true;
-    setStatus("Waking server & creating room…", "spin");
-    wakeServer(() => {
-      connect(() => {
-        send({ type:"CREATE_ROOM", playerName:name, settings:{
-          rules: settings.rules, mode: settings.mode,
-          prizeRank: settings.prizeRank, numDecks: settings.numDecks,
-        }});
-      });
+    setStatus("Connecting to server…", "spin");
+    // Best-effort wake (fire-and-forget; does NOT gate the socket — a CORS-blocked
+    // or slow /health must never stop us from sending CREATE_ROOM).
+    pingHealth();
+    // The WebSocket upgrade itself wakes a sleeping Render dyno. Connect now.
+    connect(() => {
+      setStatus("Creating room…", "spin");
+      send({ type:"CREATE_ROOM", playerName:name, settings:{
+        rules: settings.rules, mode: settings.mode,
+        prizeRank: settings.prizeRank, numDecks: settings.numDecks,
+      }});
     });
   }
 
-  // Wake a sleeping Render dyno before opening the WebSocket. iOS Safari times out
-  // WS upgrades against a cold server, so we poll /health (with a short timeout)
-  // until it answers, then proceed. Always proceeds after a few tries regardless.
-  function wakeServer(done) {
-    const httpUrl = serverUrl().replace(/^ws/, "http");
-    let tries = 0;
-    const attempt = () => {
-      tries++;
-      const ctrl = ("AbortController" in window) ? new AbortController() : null;
-      const t = setTimeout(() => { if (ctrl) ctrl.abort(); }, 4000);
-      fetch(httpUrl + "/health", { signal: ctrl ? ctrl.signal : undefined, cache: "no-store" })
-        .then(r => { clearTimeout(t); if (r && r.ok) { done(); } else { retry(); } })
-        .catch(() => { clearTimeout(t); retry(); });
-    };
-    const retry = () => {
-      if (tries >= 8) { done(); return; }      // give up waking, try the socket anyway
-      setStatus(`Waking server… (${tries})`, "spin");
-      setTimeout(attempt, 1500);
-    };
-    attempt();
+  // Optional, fire-and-forget warm-up. Never awaited; never blocks the socket.
+  function pingHealth() {
+    try {
+      const httpUrl = serverUrl().replace(/^ws/, "http");
+      fetch(httpUrl + "/health", { cache: "no-store", mode: "no-cors" }).catch(()=>{});
+    } catch (e) {}
   }
 
   function joinRoom() {
@@ -2100,12 +2095,10 @@ const NET = (function(){
     const code = ($("codeInput").value || "").toUpperCase().trim();
     if (!code) { setStatus("Enter a room code","error"); return; }
     if (code.length !== 4) { setStatus("Code must be 4 letters","error"); return; }
-    setStatus("Waking server & joining " + code + "…", "spin");
-    // Wake Render from sleep before upgrading to WebSocket (critical on iOS).
-    wakeServer(() => {
-      connect(() => {
-        send({ type:"JOIN_ROOM", roomId:code, playerName:name });
-      });
+    setStatus("Connecting & joining " + code + "…", "spin");
+    pingHealth();
+    connect(() => {
+      send({ type:"JOIN_ROOM", roomId:code, playerName:name });
     });
   }
 

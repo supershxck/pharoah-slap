@@ -485,20 +485,32 @@ class Room {
 // ─── HTTP SERVER (health check for Render) ───────────────────────────────────
 const HTML_FILE = path.join(__dirname, "pharaoh-slap-v6.html");
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "*",
+};
+
 const server = http.createServer((req, res) => {
+  // Preflight / cross-origin support so the optional /health warm-up never blocks.
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, CORS);
+    res.end();
+    return;
+  }
   if (req.url === "/health") {
-    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.writeHead(200, { "Content-Type": "text/plain", ...CORS });
     res.end("OK");
     return;
   }
   // Serve the game for all other routes
   fs.readFile(HTML_FILE, (err, data) => {
     if (err) {
-      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.writeHead(404, { "Content-Type": "text/plain", ...CORS });
       res.end("pharaoh-slap-v6.html not found next to server.js");
       return;
     }
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", ...CORS });
     res.end(data);
   });
 });
@@ -506,9 +518,10 @@ const server = http.createServer((req, res) => {
 // ─── WEBSOCKET SERVER ────────────────────────────────────────────────────────
 const wss = new WebSocket.Server({ server });
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws, req) => {
   let playerId = null;
   let roomId   = null;
+  console.log(`WS connection from ${req && req.socket ? req.socket.remoteAddress : "?"}`);
 
   ws.on("message", (raw) => {
     let msg;

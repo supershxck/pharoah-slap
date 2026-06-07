@@ -450,7 +450,7 @@ const server = http.createServer((req, res) => {
     res.end("OK");
   } else {
     res.writeHead(200, { "Content-Type": "text/plain" });
-    res.end("Pharaoh Slap server 𓁢");
+    res.end("Pharaoh Slap server - OK");
   }
 });
 
@@ -654,7 +654,7 @@ function uid() {
 
 // ─── START ────────────────────────────────────────────────────────────────────
 server.listen(PORT, () => {
-  console.log(`𓁢 Pharaoh Slap server listening on port ${PORT}`);
+  console.log(`[Pharaoh Slap] Server listening on port ${PORT}`);
   console.log(`   Rooms: 0 | Players: 0 | Grace window: ${SLAP_GRACE_MS}ms`);
 });
 

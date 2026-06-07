@@ -1818,6 +1818,7 @@ const NET = (function(){
   let isHost = false;
   let hjMode = "host";   // "host" | "join"
   let reconnectAttempts = 0;
+  let intentionalDisconnect = false;
   let reconnectTimer = null;
   let pingInterval = null;
   let onlinePlayers = [];  // [{ id, name, cardCount }]
@@ -1858,6 +1859,10 @@ const NET = (function(){
     ws.onerror = () => setStatus("Connection error","error");
     ws.onclose = () => {
       clearInterval(pingInterval);
+      if (intentionalDisconnect) {
+        intentionalDisconnect = false;
+        return; // suppress "Disconnected" for deliberate tab-switch etc.
+      }
       if (state === "playing" && settings.playerMode === "online") {
         $("disconnectedOverlay").classList.add("show");
         scheduleReconnect();
@@ -2239,6 +2244,7 @@ const NET = (function(){
   function setMode(mode) { hjMode = mode; }
 
   function disconnect() {
+    intentionalDisconnect = true;
     state = "idle";
     if (ws) { try { ws.close(); } catch(e) {} ws = null; }
     clearInterval(pingInterval);
@@ -2291,28 +2297,27 @@ window.onlineBack = function() {
 })();
 
 // ── Wire online mode into play/slap actions ──────────────────────────────
-// Patch doPlay and doSlap to route through NET when online
+// Wrap doPlay/doSlap with online routing (use variable assignment, not hoisted function decl)
 const _origDoPlay = doPlay;
 const _origDoSlap = doSlap;
 
-// Override — in online mode, only player 0 (you) can act; all actions go via NET
-function doPlay(pIdx) {
+doPlay = function(pIdx) {
   if (settings.playerMode === "online") {
-    if (pIdx !== 0) return;               // only "you" (index 0 after reorder)
+    if (pIdx !== 0) return;
     if (state === "playing" && turnIdx === 0) NET.playCard();
     return;
   }
   _origDoPlay(pIdx);
-}
+};
 
-function doSlap(pIdx) {
+doSlap = function(pIdx) {
   if (settings.playerMode === "online") {
     if (pIdx !== 0) return;
     if (state === "playing") NET.slap();
     return;
   }
   _origDoSlap(pIdx);
-}
+};
 
 // Keyboard: in online mode only respond to A/S for the local player
 // (already handled since doPlay/doSlap are patched above)

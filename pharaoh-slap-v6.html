@@ -5382,7 +5382,7 @@
               (el ? el.value.trim() : "") ||
               (typeof computeServerUrl === "function"
                 ? computeServerUrl()
-                : "wss://pharoah-slap.onrender.com");
+                : "wss://pharaoh-slap.onrender.com");
             raw = raw.replace(/^http/, "ws"); // http(s):// → ws(s)://
             raw = raw.replace(/\/+$/, ""); // strip any trailing slashes
             // iOS hard rule: if this page is https, the socket MUST be wss. Force it.
@@ -6278,7 +6278,7 @@
         };
 
         // Default production server (Render). Players connect here unless served from the same host.
-        const DEFAULT_SERVER_URL = "wss://pharoah-slap.onrender.com";
+        const DEFAULT_SERVER_URL = "wss://pharaoh-slap.onrender.com";
 
         // Compute the best server URL for this device/context.
         function computeServerUrl() {

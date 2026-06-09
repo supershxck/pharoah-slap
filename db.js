@@ -1,27 +1,28 @@
 /**
  * db.js — Persistence layer for Pharaoh Slap
  *
- * SQLite via better-sqlite3 (synchronous, zero-config).
- * EVERY query lives behind this module so the storage engine can be swapped
- * (e.g. to Postgres/Neon) without touching app logic — see design spec §5.
+ * Uses Node's BUILT-IN SQLite (`node:sqlite`, available in Node 22.5+).
+ * No native addon, no compile step, no prebuild-install — so the deploy
+ * build can't fail on a C++ toolchain. EVERY query lives behind this module,
+ * so swapping to Postgres later is a single-file change.
  *
- * Requires a persistent disk on Render. Path is configurable via DB_PATH;
+ * Needs a persistent disk on Render. Path is configurable via DB_PATH;
  * defaults to ./data/pharaoh.db (mount your disk at ./data).
  */
 "use strict";
 
 const path = require("path");
 const fs = require("fs");
-const Database = require("better-sqlite3");
+const { DatabaseSync } = require("node:sqlite");
 
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "data", "pharaoh.db");
 
 // Ensure the parent directory exists (disk mount or local dev).
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
-const db = new Database(DB_PATH);
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+const db = new DatabaseSync(DB_PATH);
+db.exec("PRAGMA journal_mode = WAL;");
+db.exec("PRAGMA foreign_keys = ON;");
 
 // ─── SCHEMA ──────────────────────────────────────────────────────────────────
 db.exec(`
@@ -73,11 +74,11 @@ const stmt = {
       completed_at = datetime('now')`),
 };
 
-// ─── PUBLIC API ──────────────────────────────────────────────────────────────
+// ─── PUBLIC API (unchanged — auth.js depends on these) ───────────────────────
 module.exports = {
   createUser(username, passcodeHash) {
     const info = stmt.insertUser.run(username, passcodeHash);
-    return stmt.userById.get(info.lastInsertRowid);
+    return stmt.userById.get(Number(info.lastInsertRowid));
   },
   getUserByName(username) {
     return stmt.userByName.get(username);

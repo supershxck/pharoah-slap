@@ -1,7 +1,7 @@
 {
   "name": "pharaoh-slap-server",
-  "version": "1.1.0",
-  "description": "Authoritative WebSocket server for Pharaoh Slap",
+  "version": "1.2.0",
+  "description": "Authoritative WebSocket server + accounts/progression for Pharaoh Slap",
   "license": "MIT",
   "private": true,
   "main": "server.js",
@@ -13,6 +13,9 @@
     "node": ">=18"
   },
   "dependencies": {
-    "ws": "^8.17.0"
+    "ws": "^8.17.0",
+    "better-sqlite3": "^11.3.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
   }
 }

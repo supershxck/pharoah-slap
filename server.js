@@ -44,13 +44,14 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { handleApi } = require("./auth");
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8080;
 // Slap arbitration window: slaps within this many ms of each other are "simultaneous"
 // → server picks the lower adjusted timestamp (earlier reaction wins)
 const SLAP_GRACE_MS = 30;
-// Max players per room (host + 2–3 joiners = 3–4 total)
+// Max players per room (host + 1–3 joiners = 2–4 total)
 const MAX_PLAYERS = 4;
 // Heartbeat interval
 const HEARTBEAT_MS = 5000;
@@ -612,6 +613,17 @@ const CORS = {
 };
 
 const server = http.createServer((req, res) => {
+  // Account / progression API (auth.js). Handles its own CORS + responses.
+  if (req.url && req.url.startsWith("/api/")) {
+    Promise.resolve(handleApi(req, res)).catch((err) => {
+      console.error("API error:", err);
+      if (!res.headersSent) {
+        res.writeHead(500, { "Content-Type": "application/json", ...CORS });
+        res.end(JSON.stringify({ error: "SERVER_ERROR" }));
+      }
+    });
+    return;
+  }
   // Preflight / cross-origin support so the optional /health warm-up never blocks.
   if (req.method === "OPTIONS") {
     res.writeHead(204, CORS);
@@ -621,6 +633,26 @@ const server = http.createServer((req, res) => {
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "text/plain", ...CORS });
     res.end("OK");
+    return;
+  }
+  // Public lobby browser: list open (joinable) rooms.
+  if (req.url === "/lobbies" || req.url.startsWith("/lobbies?")) {
+    const open = [];
+    for (const room of rooms.values()) {
+      if (room.phase !== "lobby") continue; // only rooms not yet started
+      if (room.players.length >= MAX_PLAYERS) continue; // skip full
+      open.push({
+        roomId: room.id,
+        lobbyName: room.lobbyName || (room.hostName || "Pharaoh") + "'s table",
+        hostName: room.hostName || "Pharaoh",
+        playerCount: room.players.length,
+        maxPlayers: MAX_PLAYERS,
+      });
+    }
+    open.sort((a, b) => b.playerCount - a.playerCount);
+    const body = JSON.stringify(open);
+    res.writeHead(200, { "Content-Type": "application/json", ...CORS });
+    res.end(body);
     return;
   }
   // Serve the game for all other routes
@@ -655,25 +687,35 @@ wss.on("connection", (ws, req) => {
 
     switch (msg.type) {
       // ── Clock sync ──────────────────────────────────────────────────────
-      case "PING": {
-        ws.send(
-          JSON.stringify({
-            type: "PONG",
-            clientTs: msg.clientTs,
-            serverTs: Date.now(),
-          }),
-        );
-        // Store offset on the player if they're in a room
-        if (playerId && roomId) {
-          const room = rooms.get(roomId);
-          const p = room && room.getPlayer(playerId);
-          if (p) {
-            // offset = serverTs - clientTs  (approximate; single-trip estimate)
-            p.clockOffset = Date.now() - msg.clientTs;
+      case "PING":
+        {
+          ws.send(
+            JSON.stringify({
+              type: "PONG",
+              clientTs: msg.clientTs,
+              serverTs: Date.now(),
+            }),
+          );
+          // Store offset on the player if they're in a room
+          if (playerId && roomId) {
+            const room = rooms.get(roomId);
+            const p = room && room.getPlayer(playerId);
+            if (p) {
+              // offset = serverTs - clientTs  (approximate; single-trip estimate)
+              p.clockOffset = Date.now() - msg.clientTs;
+            }
           }
+          break;
         }
-        break;
-      }
+
+        function makeRoomCode(length = 4) {
+          const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I, O to avoid 1/0 confusion
+          let code = "";
+          for (let i = 0; i < length; i++) {
+            code += chars[Math.floor(Math.random() * chars.length)];
+          }
+          return code;
+        }
 
       // ── Create room ────────────────────────────────────────────────────
       case "CREATE_ROOM": {
@@ -687,6 +729,10 @@ wss.on("connection", (ws, req) => {
         playerId = makePlayerId();
         roomId = code;
         const room = new Room(code, playerId, msg.settings || {});
+        room.hostName = sanitizeName(msg.playerName);
+        room.lobbyName =
+          sanitizeName(msg.lobbyName || "").slice(0, 24) ||
+          room.hostName + "'s table";
         room.addPlayer(playerId, sanitizeName(msg.playerName), ws);
         rooms.set(code, room);
         ws.send(
@@ -779,12 +825,12 @@ wss.on("connection", (ws, req) => {
           );
           return;
         }
-        if (room.players.length < 3) {
+        if (room.players.length < 2) {
           ws.send(
             JSON.stringify({
               type: "ERROR",
               code: "NOT_ENOUGH_PLAYERS",
-              message: "Need at least 3 players total (host + 2).",
+              message: "Need at least 2 players total (host + 1).",
             }),
           );
           return;
@@ -974,7 +1020,16 @@ function makePlayerId() {
   } catch (e) {}
   return uid();
 }
-
+function dissolveRoom(code) {
+  const room = rooms.get(code);
+  if (!room) return;
+  // notify any remaining sockets
+  room.players.forEach((p) =>
+    p.ws?.send(JSON.stringify({ type: "ROOM_DISSOLVED" })),
+  );
+  rooms.delete(code);
+  broadcastLobbyList();
+}
 // ─── START ────────────────────────────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`[Pharaoh Slap] Server listening on port ${PORT}`);

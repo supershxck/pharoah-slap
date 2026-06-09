@@ -604,7 +604,7 @@ class Room {
 }
 
 // ─── HTTP SERVER (health check for Render) ───────────────────────────────────
-const HTML_FILE = path.join(__dirname, "pharaoh-slap-v6.html");
+const HTML_FILE = path.join(__dirname, "pharaoh-slap.html");
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -659,7 +659,7 @@ const server = http.createServer((req, res) => {
   fs.readFile(HTML_FILE, (err, data) => {
     if (err) {
       res.writeHead(404, { "Content-Type": "text/plain", ...CORS });
-      res.end("pharaoh-slap-v6.html not found next to server.js");
+      res.end("pharaoh-slap.html not found next to server.js");
       return;
     }
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", ...CORS });

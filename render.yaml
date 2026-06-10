@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: pharaoh-slap
+    env: node
+    # A persistent disk requires a paid instance (free tier has no disks).
+    # If you'd rather stay free, drop the `disk:` block and point db.js at an
+    # external Postgres (e.g. Neon) instead.
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    disk:
+      name: pharaoh-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+      - key: DB_PATH
+        value: /opt/render/project/src/data/pharaoh.db
+      - key: JWT_SECRET
+        generateValue: true

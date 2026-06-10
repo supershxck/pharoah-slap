@@ -1,0 +1,20 @@
+{
+  "name": "pharaoh-slap-server",
+  "version": "1.3.0",
+  "description": "Authoritative WebSocket server + accounts/progression for Pharaoh Slap",
+  "license": "MIT",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "ws": "^8.17.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

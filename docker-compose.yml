@@ -1,0 +1,18 @@
+services:
+  pharaoh-slap:
+    build: .
+    image: pharaoh-slap:latest
+    ports:
+      - "8080:8080"
+    environment:
+      # Set a strong secret in prod so login tokens survive restarts:
+      #   JWT_SECRET=$(openssl rand -hex 32) docker compose up
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+      PORT: "8080"
+      DB_PATH: /data/pharaoh.db
+    volumes:
+      - pharaoh-data:/data
+    restart: unless-stopped
+
+volumes:
+  pharaoh-data:

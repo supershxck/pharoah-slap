@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pharaoh Slap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;600;700&family=Marcellus&family=Noto+Sans+Egyptian+Hieroglyphs&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/screens.css">
+<link rel="stylesheet" href="css/tweaks.css">
+<link rel="stylesheet" href="css/progression.css">
+</head>
+<body>
+<div class="stage">
+  <div class="phone">
+    <div class="env"></div>
+    <noscript>
+      <div class="js-warning">
+        Pharaoh Slap needs JavaScript enabled to run the prototype.
+      </div>
+    </noscript>
+
+    <!-- ============================ AUTH ============================ -->
+    <div id="screen-auth" class="screen">
+      <div class="auth-crest">PHARAOH<br>SLAP</div>
+      <div class="auth-sub">Trials of the Gods</div>
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="auth-tab sel" id="tab-login">Sign In</button>
+          <button class="auth-tab" id="tab-register">New Name</button>
+        </div>
+        <input class="auth-input" id="auth-user" type="text" placeholder="Your name" autocomplete="username" maxlength="20">
+        <input class="auth-input" id="auth-pass" type="password" placeholder="Passcode" autocomplete="current-password">
+        <div id="auth-err"></div>
+        <button class="btn lapis" id="auth-submit">Enter the Temple</button>
+      </div>
+      <button id="auth-guest">Play offline vs the gods</button>
+    </div>
+
+    <!-- ========================= WEIGHING ========================== -->
+    <div id="screen-weighing" class="screen">
+      <div class="weigh-eyebrow" id="weigh-eyebrow">The Weighing</div>
+      <h2 id="weigh-title">Three trials await</h2>
+      <div id="weigh-sub">Answer with instinct.</div>
+      <div class="weigh-dots">
+        <span class="dot" id="weigh-dot0"></span>
+        <span class="dot" id="weigh-dot1"></span>
+        <span class="dot" id="weigh-dot2"></span>
+      </div>
+      <div id="weigh-stage"></div>
+    </div>
+
+    <!-- ========================== LADDER =========================== -->
+    <div id="screen-ladder" class="screen">
+      <div class="ladder-head">
+        <button class="icon-btn" id="ladder-back">&#8249;</button>
+        <div class="ladder-titles">
+          <h2>Trials of the Gods</h2>
+          <div id="ladder-path"></div>
+        </div>
+      </div>
+      <div id="ladder-list"></div>
+      <div id="ladder-intro">
+        <div id="intro-ava"></div>
+        <div id="intro-name"></div>
+        <div id="intro-title"></div>
+        <p id="intro-teach"></p>
+        <p id="intro-line"></p>
+        <div class="intro-btns">
+          <button class="btn ghost" id="intro-back" style="flex:1">Back</button>
+          <button class="btn fire" id="intro-begin" style="flex:1">Begin Duel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== REVEAL (one-time) ===================== -->
+    <div id="reveal-veil">
+      <div class="rv-eyebrow">You walk as</div>
+      <div id="rv-title">The Initiate</div>
+      <div id="rv-tag"></div>
+      <div class="rv-hint">tap to continue</div>
+    </div>
+
+    <!-- ========================== ONLINE =========================== -->
+    <div id="screen-online" class="screen">
+      <div class="ladder-head">
+        <button class="icon-btn" id="online-back">&#8249;</button>
+        <div class="ladder-titles"><h2>Online Duel</h2><div id="net-status"></div></div>
+      </div>
+
+      <div id="lobby-entry">
+        <input class="auth-input" id="net-server" type="text" placeholder="Server (blank = this server)">
+        <button class="btn lapis" id="net-create">Create Room</button>
+        <div class="lobby-or">— or join —</div>
+        <input class="auth-input" id="net-code" type="text" placeholder="Room code (e.g. ABCD)" maxlength="6" style="text-transform:uppercase">
+        <button class="btn" id="net-join">Join Room</button>
+      </div>
+
+      <div id="lobby-room">
+        <div class="lobby-code-wrap"><div class="lobby-code-lab">Room Code</div><div id="lobby-code">----</div></div>
+        <div id="lobby-players"></div>
+        <button class="btn fire" id="lobby-start">Start Game</button>
+        <button class="btn emerald" id="lobby-ready">I'm Ready</button>
+        <button class="btn ghost" id="lobby-leave">Leave</button>
+      </div>
+    </div>
+
+    <!-- ====================== COUNTDOWN ============================ -->
+    <div id="countdown"></div>
+
+    <!-- ============================ HOME ============================ -->
+    <div id="screen-home" class="screen active">
+      <div class="home-topbar">
+        <div class="avatar" id="home-avatar" data-nav="profile"></div>
+        <div class="home-id">
+          <div class="name" id="home-name">premiumisme <span class="verify">&#10004;</span></div>
+          <div class="lvl" id="home-level">Level 17</div>
+        </div>
+        <div class="pill" data-nav="profile">1 / 1</div>
+      </div>
+
+      <div class="home-mid">
+        <div class="deck-preview" id="home-deck" data-nav="pack"></div>
+        <div class="leaderboard frame">
+          <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+          <h3 class="engrave">Live Global Leaderboard</h3>
+          <div id="home-lb"></div>
+        </div>
+      </div>
+
+      <div class="glyph-strip">&#x13080; &#x1300C; &#x131CB; &#x13171; &#x13000; &#x1304E; &#x13080; &#x1308C; &#x130C0;</div>
+
+      <div class="home-hero">
+        <div class="float-card" style="left:8%;top:6%"></div>
+        <div class="float-card" style="right:10%;top:0"></div>
+        <div class="float-card" style="left:6%;bottom:4%"></div>
+        <div class="float-card" style="right:8%;bottom:8%"></div>
+        <button class="find-btn" id="find-btn">
+          <div class="fw gold-text" style="background:none;-webkit-text-fill-color:initial;color:#3a2606">FIND</div>
+          <div class="fw" style="color:#3a2606">OPPONENT</div>
+        </button>
+      </div>
+
+      <div class="home-bottom">
+        <div class="quick-bar frame">
+          <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+          <span class="qm gold-text">Quick Match</span>
+        </div>
+        <div class="mode-row">
+          <div class="mode-btn sel"><div class="mt">1v1 Ranked</div><div class="ms">Invite 22-419</div></div>
+          <div class="mode-btn"><div class="mt">Casual</div><div class="ms">Invite 22-649</div></div>
+          <div class="mode-btn" data-nav="profile"><div class="mt">Friend</div><div class="ms">Share</div></div>
+        </div>
+        <button class="btn emerald" id="trials-btn" style="margin-top:10px">&#9876; Trials of the Gods</button>
+        <button class="btn lapis" id="online-btn" style="margin-top:8px">&#127760; Online Duel</button>
+      </div>
+    </div>
+
+    <!-- ============================ TABLE ============================ -->
+    <div id="screen-table" class="screen">
+      <div class="topnav l"><button class="icon-btn" data-nav="home">&#8249;</button></div>
+
+      <div class="table-hud">
+        <div class="pstat" id="hud-you"></div>
+        <div class="pstat right" id="hud-info"></div>
+      </div>
+
+      <div class="opp-belt" id="opp-belt"></div>
+
+      <div class="altar">
+        <div class="altar-slab"></div>
+        <div class="tribute-tag" id="tribute" hidden></div>
+        <div class="pile" id="pile"><div class="pile-glow"></div></div>
+      </div>
+
+      <div class="scoreline" id="scoreline"></div>
+
+      <div class="table-controls">
+        <div class="bigbtn-wrap">
+          <button class="btn lapis" id="btn-play">PLAY CARD</button>
+          <div class="lab">YOUR TURN · A</div>
+        </div>
+        <div class="bigbtn-wrap">
+          <button class="btn fire" id="btn-slap">SLAP</button>
+          <div class="lab">PRESS S · TAP</div>
+        </div>
+      </div>
+
+      <div class="myhand" id="myhand"></div>
+    </div>
+
+    <!-- ============================ SLAP MOMENT ====================== -->
+    <div id="screen-slap" class="screen">
+      <div class="slap-hand" id="slap-hand">&#128400;</div>
+      <div class="slap-title win" id="slap-title">YOU SLAPPED FIRST!</div>
+      <div class="slap-sub" id="slap-sub">Double!</div>
+      <div class="slap-prize frame" id="slap-prize"></div>
+    </div>
+
+    <!-- ============================ VICTORY ========================== -->
+    <div id="screen-victory" class="screen">
+      <div class="topnav r"><button class="icon-btn" data-nav="home">&#9881;</button></div>
+      <div class="banner" id="vic-banner">
+        <div class="vw hero-word">VICTORY!</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:4px">
+        <div class="avatar lg" id="vic-avatar" style="border-width:3px"></div>
+        <div class="gg" id="vic-gg">GG</div>
+      </div>
+      <div id="vic-name" style="font-family:var(--font-head);font-weight:700;font-size:18px;color:var(--parchment)"></div>
+
+      <div class="result-card frame">
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <div class="rline"><span id="vic-mode" class="engrave">Slap Duel</span></div>
+        <hr class="rule" style="margin:4px 0">
+        <div class="rline"><span>Slaps Landed:</span><span class="v" id="vic-slaps">+0</span></div>
+        <div class="rline"><span>Cards Played:</span><span class="v" id="vic-cards">+0</span></div>
+        <div class="rline"><span class="engrave" id="vic-banner-word2" style="font-size:14px">Deck Upgrades Unlocked!</span></div>
+      </div>
+
+      <div class="gold-text" style="font-family:var(--font-display);font-weight:900;font-size:20px;margin-top:6px">New Reward</div>
+      <div class="reward-tray" id="vic-rewards"></div>
+
+      <div style="display:flex;gap:12px;width:100%;margin-top:14px">
+        <button class="btn lapis" id="vic-rematch" style="flex:1">Rematch?</button>
+        <button class="btn emerald" id="vic-share" style="flex:1">Share Win</button>
+      </div>
+      <button class="btn ghost" id="vic-home" style="margin-top:8px">Back to Temple</button>
+    </div>
+
+    <!-- ============================ PROFILE ========================== -->
+    <div id="screen-profile" class="screen">
+      <div class="topnav l"><button class="icon-btn" data-nav="home">&#8249;</button></div>
+      <div class="profile-head">
+        <div style="display:flex;align-items:center;gap:14px;width:100%;justify-content:center;margin-top:6px">
+          <div class="pack-ico"><div class="pack-box blue"></div><div class="pl">Free Pack · 5 Games</div></div>
+          <div class="avatar lg" id="pf-avatar" style="width:96px;height:96px;font-size:44px;border-width:3px"></div>
+          <div class="pack-ico"><div class="pack-box pink"></div><div class="pl">Pack Every 5</div></div>
+        </div>
+        <div class="pname" id="pf-name">premiumisme</div>
+        <div class="plvl gold-text" id="pf-level">Level 17</div>
+        <div class="xpbar"><i id="pf-xpfill"></i><span class="xlab">XP</span></div>
+        <div class="xptext" id="pf-xptext"></div>
+      </div>
+
+      <div class="stat-duo">
+        <div class="stat-box frame"><div class="sl">Cards Played</div><div class="sv gold-text" id="pf-cards">0</div></div>
+        <div class="stat-box frame"><div class="sl">Slaps Landed</div><div class="sv gold-text" id="pf-slaps">0</div></div>
+      </div>
+
+      <div class="recent-rewards frame">
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+        <div class="rr-title">&#9670; Recent Pack Rewards &#9670;</div>
+        <div class="reward-tray" id="pf-rewards"></div>
+      </div>
+
+      <button class="btn" id="pf-pack" data-nav="pack" style="margin-top:4px">Open a Pack</button>
+      <button class="btn ghost" id="logout-btn" style="margin-top:8px">Sign Out</button>
+    </div>
+
+    <!-- ============================ PACK ============================= -->
+    <div id="screen-pack" class="screen">
+      <div class="topnav l"><button class="icon-btn" data-nav="home">&#8249;</button></div>
+      <div class="pack-title gold-text">Level Up Rewards &mdash;<br>Customize Your Deck</div>
+      <div class="pack-fan" id="pack-fan">
+        <div class="pack-opened-tag">PACK<br>OPENED!</div>
+      </div>
+      <button class="btn emerald" id="pack-claim">Claim Rewards</button>
+    </div>
+
+  </div>
+</div>
+
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <rect width="100" height="100" fill="#0e1430"/>
+    <text x="50" y="64" font-size="52" text-anchor="middle" fill="#f6cf6b" font-family="serif">&#9824;</text>
+  </svg>
+</template>
+
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/match.js"></script>
+<script src="js/tweaks.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/weighing.js"></script>
+<script src="js/ladder.js"></script>
+<script src="js/net.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

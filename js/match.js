@@ -25,6 +25,7 @@ window.PS = window.PS || {};
   //   difficulty, gameSpeed, expert, slapTarget, label, mode, onEnd(won,stats) }
   PS.startMatch = function (opts) {
     if (M) M.destroy();
+    PS._lastMatchOpts = opts || {};   // so Rematch replays the same rules
     M = new Match(opts || {});
     PS.activeController = M;   // input router (a NetMatch can claim this too)
     M.begin();
@@ -81,7 +82,13 @@ window.PS = window.PS || {};
   Match.prototype.begin = function () {
     this.renderShell();
     PS.showScreen('table');
-    setTimeout(() => this.engine.deal(), 280);
+    if (PS.RULES) PS.RULES.setActive(this.cfg.slapOpts || {}, this.label, this.slapTarget);
+    // First match ever → quick tutorial; the deal waits until it's dismissed.
+    if (PS.RULES && PS.RULES.needsTutorial()) {
+      PS.RULES.openTutorial(() => this.engine.deal());
+    } else {
+      setTimeout(() => this.engine.deal(), 280);
+    }
   };
 
   /* ---- Build static table chrome for this player set --------------------- */
@@ -92,7 +99,7 @@ window.PS = window.PS || {};
     $('#hud-you').innerHTML =
       '<div class="avatar sm" id="hud-you-ava">' + you.avatar + '</div>' +
       '<div class="meta"><div class="pn">' + you.name + '</div>' +
-      '<div class="pc"><span id="hud-you-slaps">0</span> slaps</div>' +
+      '<div class="pc"><span id="hud-you-slaps">0</span> slaps · <span id="hud-you-count">0</span> cards</div>' +
       '<div class="cardbar"><i id="hud-you-bar"></i></div></div>';
     $('#hud-info').innerHTML =
       '<div class="meta"><div class="pn engrave">First to ' + this.slapTarget + '</div>' +
@@ -108,6 +115,7 @@ window.PS = window.PS || {};
       o.innerHTML =
         '<div class="avatar">' + p.avatar + '</div>' +
         '<div class="on">' + p.name + '</div>' +
+        '<div class="ocnt"><span class="cnt">0</span> cards</div>' +
         '<div class="cardbar" style="width:54px"><i></i></div>';
       belt.appendChild(o);
     }
@@ -283,7 +291,7 @@ window.PS = window.PS || {};
       title.textContent = 'YOU SLAPPED FIRST!';
       title.className = 'slap-title win';
       const reason = (ev.reasons && ev.reasons[0]) || 'double';
-      sub.textContent = ({ double: 'Double!', sandwich: 'Sandwich!', topbottom: 'Top & Bottom!', run: 'Run of three!' }[reason]) || 'Clean slap!';
+      sub.textContent = ({ double: 'Double!', sandwich: 'Sandwich!', marriage: 'Marriage — Q & K!', divorce: 'Divorce — Q ✕ K!', topbottom: 'Top & Bottom!', run: 'Run of three!' }[reason]) || 'Clean slap!';
       prize.hidden = false;
       prize.className = 'slap-prize frame';
       prize.innerHTML = '<span class="gold-text">PILE WON · +' + ev.count + ' cards</span>';
@@ -308,6 +316,8 @@ window.PS = window.PS || {};
 
   /* ---- Game over --------------------------------------------------------- */
   Match.prototype.onGameOver = function (winnerIdx) {
+    if (this._ended) return;   // engine event + slap-target timer can both land here
+    this._ended = true;
     this.matchOver = true;
     this.paused = true;
     this.clearAll();
@@ -383,6 +393,7 @@ window.PS = window.PS || {};
     const total = 52;
     const you = eng.players[this.human];
     $('#hud-you-slaps').textContent = you.slapsLanded;
+    const yc = $('#hud-you-count'); if (yc) yc.textContent = you.hand.length;
     $('#hud-you-bar').style.width = Math.min(100, you.hand.length / total * 100) + '%';
     for (const p of eng.players) {
       if (p.index === this.human) continue;
@@ -390,6 +401,8 @@ window.PS = window.PS || {};
       if (!o) continue;
       const bar = o.querySelector('.cardbar > i');
       if (bar) bar.style.width = Math.min(100, p.hand.length / total * 100) + '%';
+      const cnt = o.querySelector('.ocnt .cnt');
+      if (cnt) cnt.textContent = p.hand.length;
       o.classList.toggle('out', p.eliminated);
     }
     // scoreline: you vs best opponent slaps

@@ -254,6 +254,8 @@ window.PS = window.PS || {};
     this.updateControls();
   };
   NetMatch.prototype.onGameOver = function (m) {
+    if (this._ended) return;
+    this._ended = true;
     this.matchOver = true;
     const won = m.winnerId === myId;
     if (m.playerCounts) m.playerCounts.forEach(pc => { const s = this.seatById(pc.id); if (s) s.count = pc.cardCount; });

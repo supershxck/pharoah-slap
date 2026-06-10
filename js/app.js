@@ -59,7 +59,7 @@ window.PS = window.PS || {};
     // Rematch / home route back into the ladder when a god duel is in flight.
     $('#vic-rematch').addEventListener('click', () => {
       if (PS.LADDER && PS.LADDER.active) PS.LADDER.resumeAfterMatch(true);
-      else PS.startMatch();
+      else PS.startMatch(PS._lastMatchOpts);   // replay the same rules
     });
     $('#vic-home').addEventListener('click', () => {
       if (PS.LADDER && PS.LADDER.active) PS.LADDER.resumeAfterMatch(false);

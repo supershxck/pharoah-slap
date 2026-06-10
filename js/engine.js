@@ -45,6 +45,11 @@
     // double/sandwich are on by default; a god's rule-set can switch them off.
     if (opts.double !== false && n >= 2 && pile[n - 1].rank === pile[n - 2].rank) reasons.push('double');
     if (opts.sandwich !== false && n >= 3 && pile[n - 1].rank === pile[n - 3].rank) reasons.push('sandwich');
+    // Marriage: Q & K back-to-back. Divorce: Q & K with one card between.
+    // Both on by default (like double/sandwich); rule-sets can switch them off.
+    const qk = (a, b) => (a === 12 && b === 13) || (a === 13 && b === 12);
+    if (opts.marriage !== false && n >= 2 && qk(pile[n - 2].rank, pile[n - 1].rank)) reasons.push('marriage');
+    if (opts.divorce !== false && n >= 3 && qk(pile[n - 3].rank, pile[n - 1].rank)) reasons.push('divorce');
     if (opts.topBottom && n >= 2 && pile[n - 1].rank === pile[0].rank) reasons.push('topbottom');
     // Run of 3 ascending/descending (consecutive ranks), optional
     if (opts.runs && n >= 3) {

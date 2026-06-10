@@ -30,14 +30,14 @@ window.PS = window.PS || {};
       teach_long: 'Three cards climbing or falling in rank are slappable. Apep plays bait that only looks legal — a false slap costs you a card. Strike only on truth.',
       intro: 'The pile lies. So do I.', defeat: 'Sssslippery…',
       diff: 'normal', expert: false, rules: { double: true,  sandwich: true,  run: true } },
-    { id: 'seshat', name: 'Seshat', title: 'The Professor',  domain: 'Mathematics',            avatar: '📐', teach: 'Read the board — no mercy on tempo',
-      teach_long: 'Seshat counts faster than you. Doubles, sandwiches and sequences are all live, and she never wastes a beat. Commit only when the math is certain.',
+    { id: 'seshat', name: 'Seshat', title: 'The Professor',  domain: 'Mathematics',            avatar: '📐', teach: 'Marriage & divorce — the royal couple',
+      teach_long: 'New law: a Queen and King back-to-back are married — slap them. Parted by a single card, divorced — slap that too. Doubles, sandwiches and sequences all stay live. Count everything.',
       intro: 'It’s only arithmetic. You’re simply bad at it.', defeat: '…the math changed.',
-      diff: 'hard',   expert: false, rules: { double: true,  sandwich: true,  run: true } },
+      diff: 'hard',   expert: false, rules: { double: true,  sandwich: true,  run: true, marriage: true, divorce: true } },
     { id: 'ra',     name: 'Ra',     title: 'The Shark',      domain: 'Supreme power',          avatar: '☀️', teach: 'All rules. No cues. No mercy.',
-      teach_long: 'Every rule is live — doubles, sandwiches, sequences, top-and-bottom — and the slap cues are gone. See it yourself, or lose. The sun does not explain itself.',
+      teach_long: 'Every rule is live — doubles, sandwiches, marriage, divorce, sequences, top-and-bottom — and the slap cues are gone. See it yourself, or lose. The sun does not explain itself.',
       intro: '', defeat: '',
-      diff: 'hard',   expert: true,  rules: { double: true,  sandwich: true,  run: true, topBottom: true } },
+      diff: 'hard',   expert: true,  rules: { double: true,  sandwich: true,  run: true, topBottom: true, marriage: true, divorce: true } },
   ];
   const GOD_BY_ID = Object.fromEntries(GODS.map((g) => [g.id, g]));
   const PATH_SEQ = {
@@ -152,6 +152,10 @@ window.PS = window.PS || {};
         sandwich: !!g.rules.sandwich,
         runs: !!g.rules.run,
         topBottom: !!g.rules.topBottom,
+        // explicit: gods teach one mechanic at a time, so these stay off
+        // until Seshat introduces them (engine defaults them ON elsewhere)
+        marriage: !!g.rules.marriage,
+        divorce: !!g.rules.divorce,
       },
       difficulty: DIFF_MAP[g.diff] || 'medium',
       gameSpeed: SPEED_MAP[g.diff] || 'normal',
@@ -168,7 +172,7 @@ window.PS = window.PS || {};
     const pool = [{ name: 'Set', glyph: '🌩' }, { name: 'Horus', glyph: '🦅' }, { name: 'Apep', glyph: '🐍' }];
     PS.startMatch({
       opponents: pool.slice(0, n),
-      slapOpts: { double: true, sandwich: true, runs: false, topBottom: false },
+      slapOpts: { double: true, sandwich: true, marriage: true, divorce: true, runs: false, topBottom: false },
       difficulty: 'medium',
       gameSpeed: 'normal',
       slapTarget: 6,

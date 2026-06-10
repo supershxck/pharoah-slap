@@ -248,4 +248,31 @@ function clampNum(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
 
+// ─── MASTER ACCOUNT SEED ─────────────────────────────────────────────────────
+// Dev/QA account, created (or topped up) at boot: onboarding done, every god
+// beaten at 3 stars, trials complete. Idempotent — recordProgress keeps MAX(stars).
+//   MASTER_USER / MASTER_PASSCODE  override the credentials (set these in prod!)
+//   MASTER_DISABLE=1               skips the seed entirely (public launch)
+(function seedMasterAccount() {
+  if (process.env.MASTER_DISABLE === "1") return;
+  const name = process.env.MASTER_USER || "Pharaoh";
+  const pass = process.env.MASTER_PASSCODE || "ankh1234";
+  try {
+    let u = db.getUserByName(name);
+    if (!u) u = db.createUser(name, bcrypt.hashSync(pass, 10));
+    db.saveOnboarding(u.id, {
+      path: "ascendant",
+      slapSpeed: "instinctive",
+      memoryScore: "strong",
+      priorExperience: "yes",
+    });
+    db.setStage(u.id, GODS.length, true);
+    for (const g of GODS)
+      db.recordProgress(u.id, g, 3, { fastestSlap: 250, pileWins: 12, falseSlaps: 0 });
+    console.log(`[auth] master account '${name}' ready — all trials unlocked`);
+  } catch (e) {
+    console.warn("[auth] master account seed failed:", e.message);
+  }
+})();
+
 module.exports = { handleApi, assignTutorialPath, GODS };

@@ -80,6 +80,7 @@ window.PS = window.PS || {};
   };
 
   Match.prototype.begin = function () {
+    this._t0 = Date.now();
     this.renderShell();
     PS.showScreen('table');
     if (PS.RULES) PS.RULES.setActive(this.cfg.slapOpts || {}, this.label, this.slapTarget);
@@ -295,6 +296,7 @@ window.PS = window.PS || {};
       prize.hidden = false;
       prize.className = 'slap-prize frame';
       prize.innerHTML = '<span class="gold-text">PILE WON · +' + ev.count + ' cards</span>';
+      if (PS.playSlapFx) PS.playSlapFx(scr);   // equipped slap effect
     } else {
       hand.textContent = '\u270B';
       title.textContent = 'BLOCKED!';
@@ -324,6 +326,7 @@ window.PS = window.PS || {};
     const winner = this.engine.players[winnerIdx];
     const me = this.engine.players[this.human];
     const won = winnerIdx === this.human;
+    const duration = this._t0 ? Math.round((Date.now() - this._t0) / 1000) : 0;
     // Progression hook (ladder records stars, reveals title, etc.)
     if (this.onEnd) {
       try {
@@ -333,8 +336,16 @@ window.PS = window.PS || {};
           fastestSlap: 0,        // v7 engine doesn't time slaps yet
           slaps: me.slapsLanded,
           cards: me.cardsPlayed,
+          duration,
         });
       } catch (e) { /* never let a hook break the end screen */ }
+    }
+    // XP / packs / totals — every local match counts (guest or account).
+    if (PS.COSMO) {
+      PS.COSMO.recordMatch({
+        won, slaps: me.slapsLanded, cards: me.cardsPlayed,
+        falseSlaps: me.slapsMissed, duration,
+      });
     }
     PS.showVictory({
       winnerIdx, winner,

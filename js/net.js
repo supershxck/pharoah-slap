@@ -181,7 +181,7 @@ window.PS = window.PS || {};
     $('#hud-you').innerHTML =
       '<div class="avatar sm">' + you.avatar + '</div>' +
       '<div class="meta"><div class="pn">' + you.name + '</div>' +
-      '<div class="pc"><span id="hud-you-slaps">0</span> slaps</div>' +
+      '<div class="pc"><span id="hud-you-slaps">0</span> slaps · <span id="hud-you-count">0</span> cards</div>' +
       '<div class="cardbar"><i id="hud-you-bar"></i></div></div>';
     $('#hud-info').innerHTML = '<div class="meta"><div class="pn engrave">Online</div><div class="pc">Room ' + (roomId || '') + '</div></div>';
     const belt = $('#opp-belt'); belt.innerHTML = '';
@@ -189,6 +189,7 @@ window.PS = window.PS || {};
       if (i === this.human) return;
       const o = el('div', 'opp'); o.dataset.idx = i;
       o.innerHTML = '<div class="avatar">' + p.avatar + '</div><div class="on">' + p.name + '</div>' +
+        '<div class="ocnt"><span class="cnt">0</span> cards</div>' +
         '<div class="cardbar" style="width:54px"><i></i></div>';
       belt.appendChild(o);
     });
@@ -258,6 +259,7 @@ window.PS = window.PS || {};
     this._ended = true;
     this.matchOver = true;
     const won = m.winnerId === myId;
+    if (PS.COSMO) PS.COSMO.recordMatch({ won, slaps: this.slaps || 0, cards: 0, falseSlaps: 0, duration: 0 });
     if (m.playerCounts) m.playerCounts.forEach(pc => { const s = this.seatById(pc.id); if (s) s.count = pc.cardCount; });
     const winner = this.seatById(m.winnerId) || { name: m.winnerName || 'Nobody', avatar: '☠' };
     PS.showVictory({
@@ -300,6 +302,7 @@ window.PS = window.PS || {};
       hand.textContent = '\u{1F590}'; title.textContent = 'YOU SLAPPED FIRST!'; title.className = 'slap-title win';
       sub.textContent = (rule ? rule.replace(/_/g, ' ') : 'Clean slap') + '!';
       prize.hidden = false; prize.className = 'slap-prize frame'; prize.innerHTML = '<span class="gold-text">PILE WON</span>';
+      if (PS.playSlapFx) PS.playSlapFx(scr);
     } else {
       hand.textContent = '✋'; title.textContent = 'BLOCKED!'; title.className = 'slap-title block';
       sub.textContent = 'Not a slap — you burned a card'; prize.hidden = false; prize.className = 'slap-prize frame';
@@ -312,11 +315,13 @@ window.PS = window.PS || {};
     const total = 52;
     const you = this.players[this.human];
     const slapsEl = $('#hud-you-slaps'); if (slapsEl) slapsEl.textContent = this.slaps || 0;
+    const yc = $('#hud-you-count'); if (yc) yc.textContent = you.count || 0;
     const bar = $('#hud-you-bar'); if (bar) bar.style.width = Math.min(100, (you.count || 0) / total * 100) + '%';
     this.players.forEach((p) => {
       if (p.index === this.human) return;
       const o = this.oppEl(p.index); if (!o) return;
       const b = o.querySelector('.cardbar > i'); if (b) b.style.width = Math.min(100, (p.count || 0) / total * 100) + '%';
+      const cnt = o.querySelector('.ocnt .cnt'); if (cnt) cnt.textContent = p.count || 0;
       o.classList.toggle('out', (p.count || 0) === 0);
     });
     const sl = $('#scoreline');

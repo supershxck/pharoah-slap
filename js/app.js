@@ -66,7 +66,10 @@ window.PS = window.PS || {};
       else PS.showScreen('home');
     });
     $('#vic-share').addEventListener('click', () => PS.toast('Win shared to the temple!'));
-    $('#pack-claim').addEventListener('click', () => PS.showScreen('home'));
+    $('#pack-claim').addEventListener('click', () => {
+      if (PS.COSMO) PS.COSMO.onPackButton();
+      else PS.showScreen('home');
+    });
 
     // Progression wiring
     const trials = $('#trials-btn');

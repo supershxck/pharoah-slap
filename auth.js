@@ -27,6 +27,61 @@ const TOKEN_TTL = "30d";
 // God ladder order — index = tutorial_stage milestone.
 const GODS = ["thoth", "set", "anubis", "horus", "apep", "seshat", "ra"];
 
+// ─── COSMETICS CATALOG (server-authoritative; client mirrors in cosmetics.js) ─
+// kind: 'skin' = card back, 'fx' = slap effect. weight drives pack rolls.
+const CATALOG = [
+  { id: "skin_tiedye",  kind: "skin", value: "tiedye",  name: "Tie-Dye",       rarity: "starter", weight: 0 },
+  { id: "skin_egypt",   kind: "skin", value: "egypt",   name: "Lapis Seal",    rarity: "starter", weight: 0 },
+  { id: "skin_scarab",  kind: "skin", value: "scarab",  name: "Scarab Shell",  rarity: "common",  weight: 24 },
+  { id: "skin_nile",    kind: "skin", value: "nile",    name: "Nile at Dusk",  rarity: "common",  weight: 24 },
+  { id: "skin_sunboat", kind: "skin", value: "sunboat", name: "Solar Barque",  rarity: "rare",    weight: 12 },
+  { id: "skin_duat",    kind: "skin", value: "duat",    name: "The Duat",      rarity: "epic",    weight: 5 },
+  { id: "fx_burst",     kind: "fx",   value: "burst",   name: "Gold Burst",    rarity: "common",  weight: 24 },
+  { id: "fx_bolt",      kind: "fx",   value: "bolt",    name: "Set's Bolt",    rarity: "common",  weight: 24 },
+  { id: "fx_scarabs",   kind: "fx",   value: "scarabs", name: "Scarab Swarm",  rarity: "rare",    weight: 12 },
+  { id: "fx_flames",    kind: "fx",   value: "flames",  name: "Ra's Flames",   rarity: "rare",    weight: 12 },
+  { id: "fx_ankhs",     kind: "fx",   value: "ankhs",   name: "Rain of Ankhs", rarity: "epic",    weight: 5 },
+];
+const STARTERS = CATALOG.filter((c) => c.rarity === "starter").map((c) => c.id);
+const CATALOG_BY_ID = Object.fromEntries(CATALOG.map((c) => [c.id, c]));
+const PACK_SIZE = 3;
+const GAMES_PER_PACK = 5;
+
+// ─── LEVELING ────────────────────────────────────────────────────────────────
+// Need 120 XP for level 2, +60 more per level after. A win pays 60 + 2/slap.
+function levelFromXp(xp) {
+  let level = 1, rem = Math.max(0, xp | 0), need = 120;
+  while (rem >= need) { rem -= need; level++; need = 120 + 60 * (level - 1); }
+  return { level, into: rem, next: need };
+}
+function xpForMatch(r) {
+  const slaps = clampNum(r.slaps, 0, 50);
+  return (r.won ? 60 : 25) + Math.min(30, slaps * 2);
+}
+
+function ownedOf(u) {
+  let arr;
+  try { arr = JSON.parse(u.cosmetics || "[]"); } catch { arr = []; }
+  const set = new Set(Array.isArray(arr) ? arr : []);
+  STARTERS.forEach((s) => set.add(s)); // starters are always owned
+  return set;
+}
+function equippedOf(u) {
+  try { return JSON.parse(u.equipped || "{}") || {}; } catch { return {}; }
+}
+function rollPack(owned) {
+  const items = [];
+  for (let i = 0; i < PACK_SIZE; i++) {
+    const pool = CATALOG.filter((c) => c.weight > 0 && !owned.has(c.id) && !items.some((x) => x.id === c.id));
+    if (!pool.length) { items.push({ duplicate: true, xp: 40 }); continue; } // collection complete → XP
+    let t = Math.random() * pool.reduce((s, c) => s + c.weight, 0);
+    const pick = pool.find((c) => (t -= c.weight) <= 0) || pool[pool.length - 1];
+    items.push({ id: pick.id, kind: pick.kind, value: pick.value, name: pick.name, rarity: pick.rarity });
+    owned.add(pick.id);
+  }
+  return items;
+}
+
 // ─── PATH ASSIGNMENT (design spec §3.1, verbatim logic) ──────────────────────
 function assignTutorialPath(onboarding) {
   const { slapSpeed, memoryScore, priorExperience } = onboarding;
@@ -67,6 +122,7 @@ function publicUser(u) {
     bestStats: p.best_stats ? JSON.parse(p.best_stats) : null,
     completedAt: p.completed_at,
   }));
+  const lv = levelFromXp(u.xp || 0);
   return {
     id: u.id,
     username: u.username,
@@ -74,6 +130,17 @@ function publicUser(u) {
     tutorialStage: u.tutorial_stage,
     tutorialComplete: !!u.tutorial_complete,
     progress,
+    xp: u.xp || 0,
+    level: lv.level,
+    levelInto: lv.into,
+    levelNext: lv.next,
+    games: u.games || 0,
+    wins: u.wins || 0,
+    cardsPlayed: u.cards_played || 0,
+    slapsLanded: u.slaps_landed || 0,
+    packs: u.packs || 0,
+    cosmetics: [...ownedOf(u)],
+    equipped: equippedOf(u),
   };
 }
 
@@ -220,6 +287,7 @@ async function handleApi(req, res) {
       fastestSlap: clampNum(result.fastestSlap, 0, 60000),
       pileWins: clampNum(result.pileWins, 0, 1000),
       falseSlaps: clampNum(result.falseSlaps, 0, 1000),
+      duration: clampNum(result.duration, 0, 86400),
     };
     db.recordProgress(user.id, godId, stars, bestStats);
 
@@ -232,15 +300,85 @@ async function handleApi(req, res) {
     return sendJson(res, 200, { user: publicUser(db.getUserById(user.id)) }), true;
   }
 
+  // ── POST /api/match — any finished match: XP, totals, pack drip ────────────
+  if (url === "/api/match" && req.method === "POST") {
+    const user = authUser(req);
+    if (!user) return sendJson(res, 401, { error: "UNAUTHORIZED" }), true;
+    const body = await readBody(req);
+    if (!body) return sendJson(res, 400, { error: "BAD_JSON" }), true;
+    const won = body.won === true;
+    const xp = xpForMatch({ won, slaps: body.slaps });
+    const beforeLv = levelFromXp(user.xp || 0).level;
+    const gamesAfter = (user.games || 0) + 1;
+    let packs = gamesAfter % GAMES_PER_PACK === 0 ? 1 : 0; // every 5th game
+    const afterLv = levelFromXp((user.xp || 0) + xp).level;
+    packs += Math.max(0, afterLv - beforeLv);              // +1 per level-up
+    const updated = db.addMatch(user.id, {
+      xp, won,
+      cards: clampNum(body.cards, 0, 200),
+      slaps: clampNum(body.slaps, 0, 50),
+      packs,
+    });
+    return sendJson(res, 200, {
+      user: publicUser(updated),
+      gained: { xp, packs, leveledUp: afterLv > beforeLv },
+    }), true;
+  }
+
+  // ── POST /api/pack/open — consume one pack, roll cosmetics server-side ─────
+  if (url === "/api/pack/open" && req.method === "POST") {
+    const user = authUser(req);
+    if (!user) return sendJson(res, 401, { error: "UNAUTHORIZED" }), true;
+    if ((user.packs || 0) < 1)
+      return sendJson(res, 400, { error: "NO_PACKS", message: "No packs to open — play more games!" }), true;
+    const owned = ownedOf(user);
+    const items = rollPack(owned);
+    const bonusXp = items.filter((i) => i.duplicate).reduce((s, i) => s + i.xp, 0);
+    let updated = db.setEconomy(user.id, {
+      packs: (user.packs || 0) - 1,
+      cosmetics: [...owned],
+      equipped: equippedOf(user),
+    });
+    if (bonusXp) updated = db.grantXpAndPacks(user.id, bonusXp, 0);
+    return sendJson(res, 200, { items, user: publicUser(updated) }), true;
+  }
+
+  // ── POST /api/equip — set active card back / slap effect ───────────────────
+  if (url === "/api/equip" && req.method === "POST") {
+    const user = authUser(req);
+    if (!user) return sendJson(res, 401, { error: "UNAUTHORIZED" }), true;
+    const body = await readBody(req);
+    if (!body) return sendJson(res, 400, { error: "BAD_JSON" }), true;
+    const owned = ownedOf(user);
+    const eq = equippedOf(user);
+    for (const key of ["skin", "fx"]) {
+      if (body[key] === undefined) continue;
+      if (body[key] === null) { delete eq[key]; continue; }
+      const item = CATALOG_BY_ID[String(body[key])];
+      if (!item || item.kind !== key || !owned.has(item.id))
+        return sendJson(res, 400, { error: "NOT_OWNED" }), true;
+      eq[key] = item.id;
+    }
+    const updated = db.setEconomy(user.id, { packs: user.packs || 0, cosmetics: [...owned], equipped: eq });
+    return sendJson(res, 200, { user: publicUser(updated) }), true;
+  }
+
   return sendJson(res, 404, { error: "NOT_FOUND" }), true;
 }
 
-// ─── STAR RULES (spec §8 open thread — sensible defaults, tune later) ─────────
+// ─── STAR RULES ──────────────────────────────────────────────────────────────
+// Competitive but reachable: the win itself is a star; play clean-ish OR fast
+// for the second; clean AND brisk for the third.
+//   1★  win the trial
+//   2★  ≤2 false slaps OR finish under 4 minutes
+//   3★  ≤1 false slap AND finish under 3 minutes
 function computeStars(result) {
-  let stars = 1; // a win is always worth one
-  if (clampNum(result.falseSlaps, 0, 1e6) === 0) stars++; // clean hands
-  if (clampNum(result.fastestSlap, 1, 1e9) > 0 && result.fastestSlap < 400) stars++; // sharp
-  return Math.min(3, stars);
+  const falseSlaps = clampNum(result.falseSlaps, 0, 1e6);
+  const duration = clampNum(result.duration, 0, 86400); // seconds; 0 = unreported
+  let stars = 1;
+  if (falseSlaps <= 2 || (duration > 0 && duration <= 240)) stars = 2;
+  if (falseSlaps <= 1 && duration > 0 && duration <= 180) stars = 3;
+  return stars;
 }
 function clampNum(n, lo, hi) {
   n = Number(n);
@@ -268,8 +406,15 @@ function clampNum(n, lo, hi) {
     });
     db.setStage(u.id, GODS.length, true);
     for (const g of GODS)
-      db.recordProgress(u.id, g, 3, { fastestSlap: 250, pileWins: 12, falseSlaps: 0 });
-    console.log(`[auth] master account '${name}' ready — all trials unlocked`);
+      db.recordProgress(u.id, g, 3, { fastestSlap: 250, pileWins: 12, falseSlaps: 0, duration: 120 });
+    // Full collection, flashiest gear equipped, a healthy level, spare packs.
+    db.setEconomy(u.id, {
+      packs: 5,
+      cosmetics: CATALOG.map((c) => c.id),
+      equipped: { skin: "skin_duat", fx: "fx_ankhs" },
+    });
+    if ((db.getUserById(u.id).xp || 0) < 5000) db.grantXpAndPacks(u.id, 5000, 0);
+    console.log(`[auth] master account '${name}' ready — all trials + cosmetics unlocked`);
   } catch (e) {
     console.warn("[auth] master account seed failed:", e.message);
   }

@@ -185,9 +185,20 @@ window.PS = window.PS || {};
     try {
       const { ok, data } = await PS.AUTH.api('/api/progress', {
         method: 'POST',
-        body: { godId, result: { won: true, pileWins: stats.pileWins || 0, falseSlaps: stats.falseSlaps || 0, fastestSlap: stats.fastestSlap || 0 } },
+        body: { godId, result: {
+          won: true,
+          pileWins: stats.pileWins || 0,
+          falseSlaps: stats.falseSlaps || 0,
+          fastestSlap: stats.fastestSlap || 0,
+          duration: stats.duration || 0,
+        } },
       });
-      if (ok && data.user) PS.AUTH.setUserData(data.user);
+      if (ok && data.user) {
+        PS.AUTH.setUserData(data.user);
+        // The POST races the victory screen → if the player already returned
+        // to the ladder, re-render so the fresh stars actually show.
+        if (PS.currentScreen && PS.currentScreen() === 'ladder') renderList();
+      }
     } catch (e) { /* offline — stars sync on next /me */ }
   }
 

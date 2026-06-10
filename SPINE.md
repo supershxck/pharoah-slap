@@ -2,6 +2,8 @@
 
 One document, three folders. This is the backbone of the project: what each version is, what it carries, and where the live edge sits.
 
+> **Live edge (June 9, 2026): this folder, `pharaoh-slap-v7.2`.** Convergence is done and v7.2 has since moved *ahead* of v7/v7.1 — it now carries a git repo (pushed to `github.com/supershxck/pharaoh-slap`), a tenth client module, new slap rules, and a seeded master account. v7 and v7.1 are frozen history; nothing below this line should be edited there.
+
 ## The lineage
 
 All three folders descend from the same merge: **v7's modular client** (clean SPA shell, N-agnostic card engine) fused with **v6.2's working systems** (authoritative WebSocket server, JWT accounts, SQLite progression). The differences between them are thin layers of polish and packaging, not architecture.
@@ -20,7 +22,7 @@ pharaoh-slapv7   pharaoh-slapv7.1   pharaoh-slap-v7.2
 
 The common spine — identical across all three folders:
 
-- **Client** — `Pharaoh Slap.html` SPA shell, `css/`, and nine `PS` modules in `js/`: `app`, `ui`, `engine` (local card engine, slap rules incl. double/sandwich), `match` (controller with `PS.activeController` indirection), `auth` (login veil, JWT, guest offline path), `weighing` (3-trial onboarding: Instinct / Memory / Experience), `ladder` (7-god progression, stars, one-time title reveal), `net` (server-authoritative online play), `tweaks`.
+- **Client** — `Pharaoh Slap.html` SPA shell, `css/`, and the `PS` modules in `js/`: `app`, `ui`, `engine` (local card engine, slap rules incl. double/sandwich — and in v7.2, marriage/divorce), `match` (controller with `PS.activeController` indirection), `auth` (login veil, JWT, guest offline path), `weighing` (3-trial onboarding: Instinct / Memory / Experience), `ladder` (7-god progression, stars, one-time title reveal), `net` (server-authoritative online play), `tweaks` — plus, in v7.2 only, `rules` (in-game rules panel + first-match tutorial).
 - **Server** — `server.js` (HTTP static + WebSocket game server, server runs the game and arbitrates slaps; client sends only `PLAY_CARD`/`SLAP`), `auth.js` (accounts/JWT/onboarding API), `db.js` (built-in `node:sqlite`, Node ≥ 22.5, no native builds).
 - **Modes** — guest offline play, 7-god Ladder duels, the Triad (3-seat) and the Quorum (4-seat) arenas, and online duels via lobby → ready → countdown.
 - **Deploy** — `render.yaml`, `package.json` (ws, bcryptjs, jsonwebtoken).

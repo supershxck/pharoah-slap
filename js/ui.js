@@ -80,9 +80,11 @@ window.PS = window.PS || {};
   };
 
   /* ---- Profile / leaderboard data --------------------------------------- */
+  // Real values come from PS.COSMO (server for accounts, localStorage for
+  // guests) — these are just the pre-boot defaults. Everyone starts at 1.
   PS.PROFILE = {
-    name: 'premiumisme', level: 17, xp: 17294, xpMax: 18000,
-    cardsPlayed: 3847, slapsLanded: 1294, glyph: '\u{1304E}',
+    name: 'Wanderer', level: 1, xp: 0, xpMax: 120,
+    cardsPlayed: 0, slapsLanded: 0, glyph: '\u{1304E}',
   };
 
   PS.BOT_ROSTER = [
@@ -108,6 +110,8 @@ window.PS = window.PS || {};
     $('#home-avatar').innerHTML = P.glyph;
     $('#home-name').firstChild && ($('#home-name').childNodes[0].nodeValue = P.name + ' ');
     $('#home-level').textContent = 'Level ' + P.level;
+    const hp = $('#home-packs');
+    if (hp && PS.COSMO) hp.innerHTML = '\u{1F381} ' + PS.COSMO.state.packs;
 
     // deck preview backs
     const dp = $('#home-deck'); dp.innerHTML = '';

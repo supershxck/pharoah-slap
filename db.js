@@ -49,6 +49,21 @@ db.exec(`
   );
 `);
 
+// ─── MIGRATIONS (additive, safe to re-run) ───────────────────────────────────
+// node:sqlite has no ADD COLUMN IF NOT EXISTS — try/catch keeps boots idempotent.
+for (const col of [
+  "xp INTEGER DEFAULT 0",
+  "games INTEGER DEFAULT 0",
+  "wins INTEGER DEFAULT 0",
+  "cards_played INTEGER DEFAULT 0",
+  "slaps_landed INTEGER DEFAULT 0",
+  "packs INTEGER DEFAULT 0",
+  "cosmetics TEXT DEFAULT '[]'",
+  "equipped TEXT DEFAULT '{}'",
+]) {
+  try { db.exec(`ALTER TABLE users ADD COLUMN ${col}`); } catch { /* exists */ }
+}
+
 // ─── PREPARED STATEMENTS ─────────────────────────────────────────────────────
 const stmt = {
   insertUser: db.prepare(
@@ -65,6 +80,12 @@ const stmt = {
     `UPDATE users SET tutorial_stage = ?, tutorial_complete = ? WHERE id = ?`,
   ),
   progressByUser: db.prepare(`SELECT * FROM progress WHERE user_id = ?`),
+  addMatch: db.prepare(`
+    UPDATE users SET xp = xp + ?, games = games + ?, wins = wins + ?,
+           cards_played = cards_played + ?, slaps_landed = slaps_landed + ?,
+           packs = packs + ?
+     WHERE id = ?`),
+  setEconomy: db.prepare(`UPDATE users SET packs = ?, cosmetics = ?, equipped = ? WHERE id = ?`),
   upsertProgress: db.prepare(`
     INSERT INTO progress (user_id, god_id, stars, best_stats, completed_at)
     VALUES (@user_id, @god_id, @stars, @best_stats, datetime('now'))
@@ -104,6 +125,18 @@ module.exports = {
       best_stats: bestStats ? JSON.stringify(bestStats) : null,
     });
     return stmt.progressByUser.all(userId);
+  },
+  addMatch(userId, { xp, won, cards, slaps, packs }) {
+    stmt.addMatch.run(xp | 0, 1, won ? 1 : 0, cards | 0, slaps | 0, packs | 0, userId);
+    return stmt.userById.get(userId);
+  },
+  grantXpAndPacks(userId, xp, packs) {
+    stmt.addMatch.run(xp | 0, 0, 0, 0, 0, packs | 0, userId);
+    return stmt.userById.get(userId);
+  },
+  setEconomy(userId, { packs, cosmetics, equipped }) {
+    stmt.setEconomy.run(packs | 0, JSON.stringify(cosmetics || []), JSON.stringify(equipped || {}), userId);
+    return stmt.userById.get(userId);
   },
   _raw: db, // escape hatch for migrations/tests
 };

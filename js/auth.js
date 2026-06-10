@@ -37,6 +37,7 @@ window.PS = window.PS || {};
     if (!u) return;
     PS.USER = u;
     PS.PROFILE.name = u.username || PS.PROFILE.name;
+    if (PS.COSMO) PS.COSMO.syncFromUser(u);   // xp/level/packs/cosmetics
   }
 
   function setMode(m) {
@@ -94,6 +95,8 @@ window.PS = window.PS || {};
   function logout() {
     setToken(null);
     currentUser = null;
+    PS.PROFILE.name = 'Wanderer';
+    if (PS.COSMO) PS.COSMO.loadGuest();   // back to the guest-local economy
     $('#auth-user').value = '';
     $('#auth-pass').value = '';
     setMode('login');

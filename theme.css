@@ -1,0 +1,287 @@
+/* ============================================================================
+   Pharaoh Slap — Theme System
+   Ornate Egyptian: night-blue temple, engraved gold, lapis & carnelian jewels.
+   ========================================================================== */
+
+:root {
+  /* Backdrop */
+  --night:        #080b1c;
+  --night-2:      #0e1430;
+  --night-3:      #161d44;
+  --panel:        #12183a;
+  --panel-2:      #1b2350;
+
+  /* Gold ramp (engraved metal) */
+  --gold-hi:      #ffe9a8;
+  --gold-1:       #f6cf6b;
+  --gold-2:       #e2ab3c;
+  --gold-3:       #b6801f;
+  --gold-deep:    #5e3d0e;
+
+  /* Jewels */
+  --lapis:        #2f63d6;
+  --lapis-deep:   #16306f;
+  --turq:         #34c8c0;
+  --carnelian:    #d8472e;
+  --carnelian-2:  #f06a3a;
+  --emerald:      #3fb46b;
+  --amethyst:     #8a5ad8;
+
+  /* Text */
+  --ink:          #07091a;
+  --parchment:    #f3e7c4;
+  --muted:        #9aa6d6;
+
+  /* Themeable accents (overridden by Tweaks) */
+  --accent:       var(--gold-2);
+  --accent-glow:  rgba(242,200,90,.55);
+  --hero-grad:    linear-gradient(180deg, var(--gold-hi) 0%, var(--gold-1) 38%, var(--gold-2) 62%, var(--gold-3) 100%);
+
+  --radius:       14px;
+  --frame-radius: 18px;
+  --font-display: 'Cinzel Decorative', 'Cinzel', serif;
+  --font-head:    'Cinzel', serif;
+  --font-ui:      'Marcellus', 'Cinzel', serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--font-ui);
+  color: var(--parchment);
+  background: #05060f;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ---- Engraved gold text -------------------------------------------------- */
+.gold-text {
+  background: var(--hero-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+  filter: drop-shadow(0 2px 1px rgba(0,0,0,.55));
+}
+.engrave {
+  color: var(--gold-1);
+  text-shadow:
+    0 1px 0 #fff6d6,
+    0 -1px 0 var(--gold-deep),
+    0 2px 6px rgba(0,0,0,.6);
+}
+.hero-word {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: .01em;
+  line-height: .95;
+  background: var(--hero-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(94,61,14,.5);
+  filter: drop-shadow(0 3px 0 rgba(46,28,4,.65)) drop-shadow(0 6px 14px rgba(0,0,0,.55));
+}
+
+/* ---- Hieroglyph ornament strip ------------------------------------------ */
+.glyph-strip {
+  font-family: 'Noto Sans Egyptian Hieroglyphs', serif;
+  color: var(--gold-2);
+  opacity: .5;
+  letter-spacing: .28em;
+  font-size: 13px;
+  text-align: center;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0,0,0,.5);
+}
+
+/* ---- Ornate framed panel ------------------------------------------------- */
+.frame {
+  position: relative;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(47,99,214,.18), transparent 60%),
+    linear-gradient(180deg, var(--panel-2), var(--panel) 60%, #0c1130);
+  border-radius: var(--frame-radius);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.6),
+    0 18px 50px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.06);
+}
+.frame::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(150deg, var(--gold-1), var(--gold-3) 40%, var(--gold-deep) 60%, var(--gold-1));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.frame.inset-glow::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: calc(var(--frame-radius) - 6px);
+  border: 1px solid rgba(242,200,90,.18);
+  pointer-events: none;
+}
+
+/* corner ornaments */
+.corner {
+  position: absolute;
+  width: 22px; height: 22px;
+  border: 2px solid var(--gold-2);
+  opacity: .85;
+  pointer-events: none;
+}
+.corner.tl { top: 7px; left: 7px; border-right: 0; border-bottom: 0; border-top-left-radius: 6px; }
+.corner.tr { top: 7px; right: 7px; border-left: 0; border-bottom: 0; border-top-right-radius: 6px; }
+.corner.bl { bottom: 7px; left: 7px; border-right: 0; border-top: 0; border-bottom-left-radius: 6px; }
+.corner.br { bottom: 7px; right: 7px; border-left: 0; border-top: 0; border-bottom-right-radius: 6px; }
+
+/* ---- Buttons ------------------------------------------------------------- */
+.btn {
+  font-family: var(--font-head);
+  font-weight: 700;
+  letter-spacing: .04em;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 14px 22px;
+  font-size: 16px;
+  background: var(--hero-grad);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.65),
+    inset 0 -3px 0 rgba(94,61,14,.55),
+    0 6px 0 var(--gold-deep),
+    0 10px 18px rgba(0,0,0,.45);
+  transition: transform .08s ease, box-shadow .08s ease, filter .15s;
+  -webkit-user-select: none; user-select: none;
+}
+.btn:active { transform: translateY(4px); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -2px 0 rgba(94,61,14,.5), 0 2px 0 var(--gold-deep), 0 4px 8px rgba(0,0,0,.4); }
+.btn.lapis  { background: linear-gradient(180deg, #5a8bf0, #2f63d6 55%, #1c3c93); color: #eaf1ff; box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -3px 0 rgba(9,21,64,.6), 0 6px 0 #16306f, 0 10px 18px rgba(0,0,0,.45); text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.btn.lapis:active { box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 2px 0 #16306f, 0 4px 8px rgba(0,0,0,.4); }
+.btn.fire   { background: linear-gradient(180deg, #ffb24d, #f0612f 50%, #b5241a); color: #fff3e6; box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -3px 0 rgba(90,12,6,.6), 0 6px 0 #7a1a10, 0 10px 22px rgba(216,71,46,.45); text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.btn.fire:active { box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 2px 0 #7a1a10, 0 4px 10px rgba(216,71,46,.4); }
+.btn.emerald { background: linear-gradient(180deg, #74e29a, #3fb46b 55%, #1f7a45); color: #eafff0; box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -3px 0 rgba(7,46,24,.55), 0 6px 0 #1a6b3c, 0 10px 18px rgba(0,0,0,.45); text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.btn.emerald:active { box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 2px 0 #1a6b3c, 0 4px 8px rgba(0,0,0,.4); }
+.btn:disabled { filter: grayscale(.6) brightness(.7); cursor: default; }
+.btn.ghost { background: rgba(20,26,64,.7); color: var(--gold-1); border: 1.5px solid var(--gold-3); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 4px 12px rgba(0,0,0,.4); text-shadow: none; }
+.btn.ghost:active { transform: translateY(2px); }
+
+/* ---- Playing cards ------------------------------------------------------- */
+.card {
+  --cw: 92px;
+  width: var(--cw);
+  height: calc(var(--cw) * 1.4);
+  border-radius: calc(var(--cw) * .09);
+  position: relative;
+  background: linear-gradient(160deg, #fffdf6, #f3ead2);
+  box-shadow: 0 6px 16px rgba(0,0,0,.45), inset 0 0 0 1px rgba(0,0,0,.08);
+  color: #16161e;
+  font-family: var(--font-head);
+  user-select: none;
+  flex: none;
+}
+.card .pip-corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: .92;
+  font-weight: 700;
+}
+.card .pip-corner.tl { top: 6%; left: 7%; }
+.card .pip-corner.br { bottom: 6%; right: 7%; transform: rotate(180deg); }
+.card .pip-corner .r { font-size: calc(var(--cw) * .26); }
+.card .pip-corner .s { font-size: calc(var(--cw) * .2); }
+.card .center-suit {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cw) * .56);
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.18));
+}
+.card.red  { color: #c8341f; }
+.card.black { color: #18181f; }
+.card.face .center-suit { font-size: calc(var(--cw) * .34); }
+.card.face .court {
+  position: absolute; inset: 11% 9%;
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(45deg, rgba(47,99,214,.10) 0 6px, rgba(216,71,46,.08) 6px 12px);
+  border: 1.5px solid currentColor;
+  opacity: .5;
+}
+
+/* Card backs */
+.card.back { background: var(--night-2); overflow: hidden; }
+.card.back::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+}
+.card.back .seal {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Noto Sans Egyptian Hieroglyphs', serif;
+  font-size: calc(var(--cw) * .42);
+}
+/* Tie-dye neon back */
+.card.back.tiedye::before {
+  background:
+    radial-gradient(circle at 50% 45%, #fff 0 4%, #ff2d8e 8%, #ffd23f 22%, #2bd6ff 38%, #7a3cff 56%, #ff2d8e 74%, #2bd6ff 100%);
+  filter: saturate(1.25) contrast(1.05);
+}
+.card.back.tiedye {
+  border: 3px solid #fff;
+  box-shadow: 0 0 14px rgba(123,60,255,.7), 0 6px 16px rgba(0,0,0,.5);
+}
+.card.back.tiedye .seal { color: rgba(10,10,30,.85); text-shadow: 0 0 6px rgba(255,255,255,.8); }
+/* Egyptian lapis back */
+.card.back.egypt::before {
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 8px, transparent 8px 16px),
+    linear-gradient(160deg, #2a4fae, #16306f 60%, #0c1f4d);
+}
+.card.back.egypt {
+  border: 2px solid var(--gold-2);
+  box-shadow: inset 0 0 0 3px rgba(242,200,90,.25), 0 6px 16px rgba(0,0,0,.5);
+}
+.card.back.egypt .seal { color: var(--gold-1); text-shadow: 0 0 8px rgba(242,200,90,.6); }
+
+/* mini badge count on stacked cards */
+.count-badge {
+  position: absolute;
+  top: -8px; left: -8px;
+  min-width: 22px; height: 22px;
+  padding: 0 5px;
+  border-radius: 12px;
+  background: var(--ink);
+  border: 1.5px solid var(--gold-2);
+  color: var(--gold-1);
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,.5);
+  font-family: var(--font-head);
+  z-index: 3;
+}
+
+/* shimmering divider */
+.rule {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold-3) 20%, var(--gold-1) 50%, var(--gold-3) 80%, transparent);
+  opacity: .7;
+  border: none;
+  margin: 0;
+}

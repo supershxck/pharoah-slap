@@ -14,23 +14,19 @@ window.PS = window.PS || {};
       teach_long: 'Cards fall in turn. When the top two cards match rank, slap the pile. First to win every card takes the temple.',
       intro: 'I will deal. You will learn the shape of it.', defeat: 'Recorded.',
       diff: 'easy',   expert: false, rules: { double: true,  sandwich: false, run: false } },
-    { id: 'set',    name: 'Set',    title: 'Doubles Danny',  domain: 'Chaos & impulse',        avatar: '🌩', teach: 'Doubles — slap matching pairs',
-      teach_long: 'Set plays fast and loud. The instant two equal ranks stack, slap. Hesitate and the storm takes the pile.',
-      intro: 'Two of a kind. SLAP IT. Or don’t — I don’t care.', defeat: 'Tch. Lucky.',
-      diff: 'normal', expert: false, rules: { double: true,  sandwich: false, run: false } },
-    { id: 'anubis', name: 'Anubis', title: 'Sandwich Sam',   domain: 'Judgement & patience',   avatar: '𓁢', teach: 'Sandwiches — rank · any · same rank',
-      teach_long: 'A new truth: a sandwich is slappable — same rank with exactly one card between. Doubles still count. Weigh before you strike.',
+    { id: 'anubis', name: 'Anubis', title: 'The Weigher',    domain: 'Judgement & patience',   avatar: '𓁢', teach: 'Doubles & sandwiches — strike both',
+      teach_long: 'Two truths at once: equal ranks back-to-back are slappable, and so is a sandwich — same rank with exactly one card between. Weigh the pile, then strike.',
       intro: 'Every card is a soul. I weigh them all.', defeat: 'Your hand was… heavier.',
       diff: 'normal', expert: false, rules: { double: true,  sandwich: true,  run: false } },
     { id: 'horus',  name: 'Horus',  title: 'The Monk',       domain: 'Sky & precision',        avatar: '🦅', teach: 'Pure reaction — be faster',
       teach_long: 'No new rule. Only speed. Horus does not blink. Doubles and sandwiches both count — slap before you think.',
       intro: '(He simply watches, unblinking.)', defeat: 'You saw it. Good.',
       diff: 'hard',   expert: false, rules: { double: true,  sandwich: true,  run: false } },
-    { id: 'apep',   name: 'Apep',   title: 'The Snake',      domain: 'Deception & entropy',    avatar: '🐍', teach: 'Sequences — and refuse the bait',
-      teach_long: 'Three cards climbing or falling in rank are slappable. Apep plays bait that only looks legal — a false slap costs you a card. Strike only on truth.',
-      intro: 'The pile lies. So do I.', defeat: 'Sssslippery…',
+    { id: 'set',    name: 'Set',    title: 'The Professor',  domain: 'Chaos & impulse',        avatar: '🌩', teach: 'Sequences — count the climb',
+      teach_long: 'New lesson: three cards climbing or falling in rank are slappable. Set plays bait that only looks legal — a false slap costs you a card. Doubles and sandwiches stay live.',
+      intro: 'Class is in session. Try to keep up.', defeat: 'Hmph. There will be a retest.',
       diff: 'normal', expert: false, rules: { double: true,  sandwich: true,  run: true } },
-    { id: 'seshat', name: 'Seshat', title: 'The Professor',  domain: 'Mathematics',            avatar: '📐', teach: 'Marriage & divorce — the royal couple',
+    { id: 'seshat', name: 'Seshat', title: 'The Scribe',     domain: 'Mathematics',            avatar: '📐', teach: 'Marriage & divorce — the royal couple',
       teach_long: 'New law: a Queen and King back-to-back are married — slap them. Parted by a single card, divorced — slap that too. Doubles, sandwiches and sequences all stay live. Count everything.',
       intro: 'It’s only arithmetic. You’re simply bad at it.', defeat: '…the math changed.',
       diff: 'hard',   expert: false, rules: { double: true,  sandwich: true,  run: true, marriage: true, divorce: true } },
@@ -41,9 +37,9 @@ window.PS = window.PS || {};
   ];
   const GOD_BY_ID = Object.fromEntries(GODS.map((g) => [g.id, g]));
   const PATH_SEQ = {
-    initiate:  ['thoth', 'set', 'anubis', 'horus', 'apep', 'seshat', 'ra'],
-    contender: ['set', 'anubis', 'horus', 'apep', 'seshat', 'ra'],
-    ascendant: ['horus', 'apep', 'seshat', 'ra'],
+    initiate:  ['thoth', 'anubis', 'horus', 'set', 'seshat', 'ra'],
+    contender: ['anubis', 'horus', 'set', 'seshat', 'ra'],
+    ascendant: ['horus', 'set', 'seshat', 'ra'],
   };
   const PATH_LABEL = { initiate: 'Path I · The Initiate', contender: 'Path II · The Contender', ascendant: 'Path III · The Ascendant' };
   const PATH_TITLE = { initiate: 'The Initiate', contender: 'The Contender', ascendant: 'The Ascendant' };
@@ -115,7 +111,7 @@ window.PS = window.PS || {};
     // Phase 4: the 4-seat table. v7's engine + opponent belt are N-agnostic,
     // so the Quorum is a real free-for-all now (no layout-4p hack needed).
     arenaRow(list, 'The Quorum · You + 3 Gods',
-      raBeaten ? 'The four-god table — Set, Horus & Apep' : 'The four-god free-for-all (open now)',
+      raBeaten ? 'The four-god table — Set, Horus & Anubis' : 'The four-god free-for-all (open now)',
       true, () => beginArena(3));
   }
   function arenaRow(list, label, sub, enabled, onClick) {
@@ -169,7 +165,7 @@ window.PS = window.PS || {};
   function beginArena(n) {
     currentGod = null;
     active = true;
-    const pool = [{ name: 'Set', glyph: '🌩' }, { name: 'Horus', glyph: '🦅' }, { name: 'Apep', glyph: '🐍' }];
+    const pool = [{ name: 'Set', glyph: '🌩' }, { name: 'Horus', glyph: '🦅' }, { name: 'Anubis', glyph: '𓁢' }];
     PS.startMatch({
       opponents: pool.slice(0, n),
       slapOpts: { double: true, sandwich: true, marriage: true, divorce: true, runs: false, topBottom: false },
@@ -195,6 +191,13 @@ window.PS = window.PS || {};
       });
       if (ok && data.user) {
         PS.AUTH.setUserData(data.user);
+        if (PS.COSMO) PS.COSMO.syncFromUser(data.user);
+        // First-clear bounty — make the reward land loudly.
+        if (data.gained && data.gained.firstClear) {
+          PS.toast(data.gained.pathComplete
+            ? '\u{1F451} PATH COMPLETE! +' + data.gained.xp + ' XP · +' + data.gained.packs + ' packs'
+            : '⚔ Trial cleared! +' + data.gained.xp + ' XP · +' + data.gained.packs + ' packs');
+        }
         // The POST races the victory screen → if the player already returned
         // to the ladder, re-render so the fresh stars actually show.
         if (PS.currentScreen && PS.currentScreen() === 'ladder') renderList();

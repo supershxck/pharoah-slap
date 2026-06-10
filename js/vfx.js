@@ -70,6 +70,16 @@ window.PS = window.PS || {};
     push({ k: 'mote', x: rnd(0, W), y: rnd(0, H), vx: rnd(-4, 4), vy: rnd(-7, -2),
       life: rnd(4, 8), t: 0, r: rnd(0.6, 1.6), col: Math.random() < 0.7 ? GOLD : TEAL });
   }
+  // Falling crimson hieroglyphs — the temple wall come loose.
+  const CARNELIAN = [216, 71, 46];
+  function spawnGlyph() {
+    const glyphs = PS.GLYPHS || ['☥'];
+    const size = rnd(14, 30);
+    push({ k: 'glyph', ch: glyphs[Math.floor(Math.random() * glyphs.length)],
+      x: rnd(8, W - 8), y: -size, vx: rnd(-5, 5), vy: rnd(22, 52) * (size / 22),
+      size, life: (H + size * 2) / (rnd(22, 52) * (size / 22)) + 1,
+      t: 0, sway: rnd(0.4, 1.4), ph: rnd(0, TAU) });
+  }
   function spawnBolt(x1, y1, x2, y2, col) {
     const pts = [[x1, y1]];
     const seg = 7;
@@ -196,10 +206,30 @@ window.PS = window.PS || {};
       }
     } else if (mode === 'home') {
       if (Math.random() < dt * 3) spawnMote();
+      if (Math.random() < dt * 1.1) spawnGlyph();
+    } else if (mode === 'auth') {
+      if (Math.random() < dt * 2.2) spawnGlyph();
     }
 
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.clearRect(0, 0, W, H);
+
+    // falling glyphs draw in normal blend so the red stays deep, not neon
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i];
+      if (p.k !== 'glyph') continue;
+      p.t += dt;
+      p.x += (p.vx + Math.sin(ts / 900 + p.ph) * p.sway * 6) * dt;
+      p.y += p.vy * dt;
+      if (p.y > H + p.size * 2 || p.t >= p.life) { parts.splice(i, 1); continue; }
+      const fadeIn = Math.min(1, p.t * 2.5);
+      const a = 0.34 * fadeIn;
+      ctx.font = p.size + 'px "Noto Sans Egyptian Hieroglyphs", serif';
+      ctx.fillStyle = 'rgba(' + CARNELIAN[0] + ',' + CARNELIAN[1] + ',' + CARNELIAN[2] + ',' + a.toFixed(3) + ')';
+      ctx.fillText(p.ch, p.x, p.y);
+    }
+
+    if (mode === 'auth') { raf = requestAnimationFrame(tick); return; } // rain only
 
     // breathing glow behind the pile / hero — heat shifts gold → carnelian
     const [gx, gy] = mode === 'table' ? pileXY() : [W / 2, H * 0.55];
@@ -221,6 +251,7 @@ window.PS = window.PS || {};
     ctx.globalCompositeOperation = 'lighter';
     for (let i = parts.length - 1; i >= 0; i--) {
       const p = parts[i];
+      if (p.k === 'glyph') continue;   // already drawn (normal blend)
       p.t += dt;
       if (p.t >= p.life) { parts.splice(i, 1); continue; }
       const k = p.t / p.life, fade = 1 - k;

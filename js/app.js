@@ -110,9 +110,10 @@ window.PS = window.PS || {};
     if (id === 'home') PS.renderHome();
     else if (id === 'profile') PS.renderProfile();
     else if (id === 'pack') PS.renderPack();
-    // ambient canvas: calm on home, duel-driven on table, off elsewhere
+    // ambient canvas: glyph rain on auth, calm on home, duel-driven on table
     if (PS.VFX) {
       if (id === 'home') PS.VFX.setMode('home');
+      else if (id === 'auth') PS.VFX.setMode('auth');
       else if (id !== 'table' && id !== 'slap') PS.VFX.setMode(null);
     }
   };

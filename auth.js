@@ -25,7 +25,9 @@ const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString("he
 const TOKEN_TTL = "30d";
 
 // God ladder order — index = tutorial_stage milestone.
-const GODS = ["thoth", "set", "anubis", "horus", "apep", "seshat", "ra"];
+// (v7.3 ladder: Anubis teaches doubles+sandwiches, Set is The Professor with
+// sequences, Apep retired. Old 'apep' progress rows are harmless orphans.)
+const GODS = ["thoth", "anubis", "horus", "set", "seshat", "ra"];
 
 // ─── COSMETICS CATALOG (server-authoritative; client mirrors in cosmetics.js) ─
 // kind: 'skin' = card back, 'fx' = slap effect. weight drives pack rolls.
@@ -287,6 +289,9 @@ async function handleApi(req, res) {
     if (!result || result.won !== true)
       return sendJson(res, 400, { error: "NOT_A_WIN" }), true;
 
+    const prior = db.getProgress(user.id).find((p) => p.god_id === godId);
+    const firstClear = !prior || !prior.stars;
+
     const stars = computeStars(result);
     const bestStats = {
       fastestSlap: clampNum(result.fastestSlap, 0, 60000),
@@ -299,10 +304,28 @@ async function handleApi(req, res) {
     // Advance tutorial_stage to at least this god's index + 1.
     const idx = GODS.indexOf(godId);
     const newStage = Math.max(user.tutorial_stage, idx + 1);
+    const wasComplete = !!user.tutorial_complete;
     const complete = newStage >= GODS.length ? 1 : 0;
     db.setStage(user.id, newStage, complete);
 
-    return sendJson(res, 200, { user: publicUser(db.getUserById(user.id)) }), true;
+    // First-clear bounty: every trial pays big; Ra pays bigger; finishing the
+    // whole path pays a crown on top. Re-clears earn nothing here (no farming).
+    const gained = { xp: 0, packs: 0, firstClear: false, pathComplete: false };
+    if (firstClear) {
+      gained.firstClear = true;
+      gained.xp = godId === "ra" ? 600 : 250;
+      gained.packs = godId === "ra" ? 4 : 2;
+      const clearedAll = GODS.every((g) =>
+        g === godId || db.getProgress(user.id).some((p) => p.god_id === g && p.stars > 0));
+      if (clearedAll && !wasComplete) {
+        gained.pathComplete = true;
+        gained.xp += 500;
+        gained.packs += 3;
+      }
+      db.grantXpAndPacks(user.id, gained.xp, gained.packs);
+    }
+
+    return sendJson(res, 200, { user: publicUser(db.getUserById(user.id)), gained }), true;
   }
 
   // ── POST /api/match — any finished match: XP, totals, pack drip ────────────

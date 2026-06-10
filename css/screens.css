@@ -3,7 +3,9 @@
    ========================================================================== */
 
 .stage {
-  position: fixed; inset: 0;
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 100vh;
+  height: 100dvh; /* tracks mobile browser chrome — keeps bottom buttons visible */
   display: flex; align-items: center; justify-content: center;
   background:
     radial-gradient(80% 60% at 50% 0%, #1a1330 0%, #0a0a18 55%, #050509 100%);
@@ -85,7 +87,12 @@
 .screen.leaving { display: flex; opacity: 0; }
 
 /* ============================ HOME ======================================== */
-#screen-home { padding: 14px 14px 16px; gap: 12px; }
+#screen-home {
+  padding: 14px 14px 16px; gap: 12px;
+  overflow-y: auto;
+  /* keep the bottom buttons clear of phone-browser toolbars / home bars */
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+}
 .home-topbar { display: flex; align-items: center; gap: 10px; }
 .avatar {
   width: 56px; height: 56px; border-radius: 12px; flex: none;

@@ -81,7 +81,10 @@ window.PS = window.PS || {};
 
   Match.prototype.begin = function () {
     this._t0 = Date.now();
+    this.charge = 0;
     this.renderShell();
+    this.renderCharge();
+    if (PS.VFX) { PS.VFX.reset(); PS.VFX.setMode('table'); }
     PS.showScreen('table');
     if (PS.RULES) PS.RULES.setActive(this.cfg.slapOpts || {}, this.label, this.slapTarget);
     // First match ever → quick tutorial; the deal waits until it's dismissed.
@@ -147,18 +150,23 @@ window.PS = window.PS || {};
       case 'play':
         this.addPileCard(ev.card, ev.player);
         this.refreshHUD();
+        if (PS.VFX) PS.VFX.cardPlayed(ev.player === this.human);
+        if (ev.player === this.human) this.bumpCharge(1 / 6);
         break;
       case 'faceChallenge':
         this.showTribute(ev.owed, ev.card);
+        if (PS.VFX) PS.VFX.faceChallenge();
         break;
       case 'tribute':
         this.showTribute(ev.owed);
         break;
       case 'slapOpen':
         this.openSlapWindow(ev.reasons);
+        if (PS.VFX) PS.VFX.slapOpen();
         break;
       case 'slap':
         this.refreshHUD();
+        if (PS.VFX && !ev.valid && ev.player === this.human) PS.VFX.falseSlap();
         break;
       case 'burn':
         if (ev.player !== this.human) {
@@ -205,7 +213,26 @@ window.PS = window.PS || {};
   Match.prototype.humanPlay = function () {
     if (this.matchOver || this.paused || this.slapWindowOpen) return;
     if (this.engine.state.turn !== this.human) return;
+    // Charged play: the meter is full — this card lands with a special effect.
+    if (this.charge >= 1) {
+      if (PS.VFX) PS.VFX.special(PS.equippedPlay || 'basic');
+      this.charge = 0;
+      this.renderCharge();
+    }
     this.engine.playTopCard(this.human);
+  };
+
+  /* ---- Drama meter (charged plays) --------------------------------------- */
+  Match.prototype.bumpCharge = function (x) {
+    if (this.charge >= 1) return;
+    this.charge = Math.min(1, this.charge + x);
+    this.renderCharge();
+  };
+  Match.prototype.renderCharge = function () {
+    const fill = $('#drama-fill'), box = $('#drama');
+    if (!fill || !box) return;
+    fill.style.width = Math.round(this.charge * 100) + '%';
+    box.classList.toggle('ready', this.charge >= 1);
   };
 
   /* ---- Slap window ------------------------------------------------------- */
@@ -266,6 +293,8 @@ window.PS = window.PS || {};
     const winner = this.engine.players[ev.winner];
     this.sweepPile(ev.winner);
     this.refreshHUD();
+    if (PS.VFX) PS.VFX.pileWon(ev.winner === this.human);
+    if (ev.winner === this.human) this.bumpCharge(1 / 3);
 
     // match win by slaps target
     if (ev.reason === 'slap' && winner.slapsLanded >= this.slapTarget && !this.matchOver) {
@@ -321,6 +350,7 @@ window.PS = window.PS || {};
     if (this._ended) return;   // engine event + slap-target timer can both land here
     this._ended = true;
     this.matchOver = true;
+    if (PS.VFX) PS.VFX.setMode(null);
     this.paused = true;
     this.clearAll();
     const winner = this.engine.players[winnerIdx];

@@ -200,6 +200,8 @@ window.PS = window.PS || {};
     pile.classList.remove('slappable');
     $('#tribute').hidden = true;
     this.slaps = 0;
+    this.charge = 0;
+    if (PS.VFX) { PS.VFX.reset(); PS.VFX.setMode('table'); }
     this.refreshHUD();
     this.highlightTurn(this.turn);
     this.updateControls();
@@ -214,7 +216,22 @@ window.PS = window.PS || {};
   NetMatch.prototype.humanPlay = function () {
     if (this.matchOver) return;
     if (this.turn !== this.human) return;
+    if (this.charge >= 1) {           // charged play (visual only — server arbitrates)
+      if (PS.VFX) PS.VFX.special(PS.equippedPlay || 'basic');
+      this.charge = 0; this.renderCharge();
+    }
     send({ type: 'PLAY_CARD', ts: adjustedNow() });
+  };
+  NetMatch.prototype.bumpCharge = function (x) {
+    if (this.charge >= 1) return;
+    this.charge = Math.min(1, (this.charge || 0) + x);
+    this.renderCharge();
+  };
+  NetMatch.prototype.renderCharge = function () {
+    const fill = $('#drama-fill'), box = $('#drama');
+    if (!fill || !box) return;
+    fill.style.width = Math.round((this.charge || 0) * 100) + '%';
+    box.classList.toggle('ready', this.charge >= 1);
   };
   NetMatch.prototype.humanSlap = function () {
     if (this.matchOver) return;
@@ -222,7 +239,10 @@ window.PS = window.PS || {};
   };
 
   NetMatch.prototype.onCardPlayed = function (card, turnIdx, fromId) {
+    const mine = fromId === myId;
     if (card) this.addPileCard(conv(card), fromId);
+    if (PS.VFX) PS.VFX.cardPlayed(mine);
+    if (mine) this.bumpCharge(1 / 6);
     if (turnIdx != null) { this.turn = turnIdx; this.highlightTurn(turnIdx); }
     // crude slap-window cue: a fresh card can become slappable
     this.slapWindowOpen = true;
@@ -235,7 +255,8 @@ window.PS = window.PS || {};
   NetMatch.prototype.onSlapValid = function (winnerId, rule) {
     this.slapWindowOpen = false; $('#pile').classList.remove('slappable');
     const w = this.seatById(winnerId);
-    if (w && w.isHuman) { this.slaps++; this.flashSlap('win', rule); }
+    if (PS.VFX) PS.VFX.pileWon(!!(w && w.isHuman));
+    if (w && w.isHuman) { this.slaps++; this.bumpCharge(1 / 3); this.flashSlap('win', rule); }
     else if (w) PS.toast(w.name + ' slapped — ' + (rule || 'pile') + '!');
     this.refreshHUD();
   };
@@ -258,6 +279,7 @@ window.PS = window.PS || {};
     if (this._ended) return;
     this._ended = true;
     this.matchOver = true;
+    if (PS.VFX) PS.VFX.setMode(null);
     const won = m.winnerId === myId;
     if (PS.COSMO) PS.COSMO.recordMatch({ won, slaps: this.slaps || 0, cards: 0, falseSlaps: 0, duration: 0 });
     if (m.playerCounts) m.playerCounts.forEach(pc => { const s = this.seatById(pc.id); if (s) s.count = pc.cardCount; });

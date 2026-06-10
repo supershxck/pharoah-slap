@@ -24,6 +24,10 @@ window.PS = window.PS || {};
     { id: 'fx_scarabs',   kind: 'fx',   value: 'scarabs', name: 'Scarab Swarm',  rarity: 'rare',    weight: 12, glyph: '\u{1FAB2}' },
     { id: 'fx_flames',    kind: 'fx',   value: 'flames',  name: "Ra's Flames",   rarity: 'rare',    weight: 12, glyph: '\u{1F525}' },
     { id: 'fx_ankhs',     kind: 'fx',   value: 'ankhs',   name: 'Rain of Ankhs', rarity: 'epic',    weight: 5,  glyph: '☥' },
+    { id: 'fx_eclipse',   kind: 'fx',   value: 'eclipse', name: 'Black Sun',     rarity: 'epic',    weight: 4,  glyph: '\u{1F311}' },
+    { id: 'play_comet',   kind: 'play', value: 'comet',   name: 'Comet Trail',   rarity: 'rare',    weight: 8,  glyph: '☄' },
+    { id: 'play_sands',   kind: 'play', value: 'sands',   name: 'Desert Vortex', rarity: 'rare',    weight: 8,  glyph: '\u{1F32A}' },
+    { id: 'play_storm',   kind: 'play', value: 'storm',   name: 'Storm of Set',  rarity: 'epic',    weight: 4,  glyph: '\u{26C8}' },
   ];
   const BY_ID = Object.fromEntries(CATALOG.map(c => [c.id, c]));
   const STARTERS = CATALOG.filter(c => c.rarity === 'starter').map(c => c.id);
@@ -89,6 +93,8 @@ window.PS = window.PS || {};
     if (skin) PS.tweaks.deckSkin = skin.value;
     const fx = state.equipped.fx && BY_ID[state.equipped.fx];
     PS.equippedFx = fx ? fx.value : null;
+    const play = state.equipped.play && BY_ID[state.equipped.play];
+    PS.equippedPlay = play ? play.value : null;
   }
 
   // ---- Match results -------------------------------------------------------
@@ -173,6 +179,7 @@ window.PS = window.PS || {};
     scarabs: { glyphs: ['\u{1FAB2}'], n: 10, rise: false },
     flames:  { glyphs: ['\u{1F525}'], n: 10, rise: true },
     ankhs:   { glyphs: ['☥'], n: 12, rise: false, fall: true },
+    eclipse: { glyphs: ['\u{1F311}', '✸'], n: 8, rise: false },
   };
   PS.playSlapFx = function (host) {
     const name = PS.equippedFx;
@@ -248,6 +255,10 @@ window.PS = window.PS || {};
       const fxs = el('div', 'coll-grid');
       CATALOG.filter(c => c.kind === 'fx').forEach(c => fxs.appendChild(itemTile(c)));
       grid.appendChild(fxs);
+      grid.appendChild(el('div', 'coll-head', 'Charged Play Effects'));
+      const plays = el('div', 'coll-grid');
+      CATALOG.filter(c => c.kind === 'play').forEach(c => plays.appendChild(itemTile(c)));
+      grid.appendChild(plays);
     }
   }
 

@@ -351,3 +351,83 @@
 .citem.locked { opacity: .38; cursor: default; filter: grayscale(.7); }
 .citem.equipped { border-color: var(--gold-1); box-shadow: 0 0 12px var(--accent-glow); }
 .citem.equipped .crar { color: var(--gold-1); font-weight: 700; }
+
+/* ==================== DRAMA METER (charged plays) ========================= */
+.drama {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 26px; margin-top: 2px;
+}
+.drama-glyph { font-size: 15px; color: var(--gold-1); opacity: .8; }
+.drama-track {
+  flex: 1; height: 6px; border-radius: 4px;
+  background: rgba(0,0,0,.4);
+  border: 1px solid rgba(242,200,90,.22);
+  overflow: hidden;
+}
+.drama-track i {
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--gold-2, #b8862e), var(--gold-1, #f6cf6b));
+  border-radius: 4px;
+  transition: width .35s cubic-bezier(.3,1,.4,1);
+}
+.drama-lab {
+  font-family: var(--font-head); font-size: 9px; letter-spacing: .16em;
+  color: var(--muted);
+}
+.drama.ready .drama-track { border-color: var(--gold-1); box-shadow: 0 0 12px var(--accent-glow); }
+.drama.ready .drama-track i { animation: drama-pulse 0.9s ease-in-out infinite; }
+.drama.ready .drama-lab { color: var(--gold-1); font-weight: 700; }
+.drama.ready .drama-glyph { opacity: 1; animation: drama-pulse 0.9s ease-in-out infinite; }
+@keyframes drama-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.65) drop-shadow(0 0 6px rgba(246,207,107,.9)); }
+}
+
+/* ==================== TENSION TREMOR ====================================== */
+.phone.tremor1 { animation: tremor1 .9s infinite; }
+.phone.tremor2 { animation: tremor2 .42s infinite; }
+@keyframes tremor1 {
+  0%, 100% { transform: translate(0,0); }
+  25% { transform: translate(.4px,-.3px); }
+  50% { transform: translate(-.3px,.4px); }
+  75% { transform: translate(.3px,.3px); }
+}
+@keyframes tremor2 {
+  0%, 100% { transform: translate(0,0); }
+  20% { transform: translate(1px,-.7px) rotate(.05deg); }
+  40% { transform: translate(-.9px,.8px); }
+  60% { transform: translate(.8px,.6px) rotate(-.05deg); }
+  80% { transform: translate(-.7px,-.8px); }
+}
+
+/* ==================== HOME — living temple ================================ */
+.find-btn { animation: find-breathe 2.6s ease-in-out infinite; }
+@keyframes find-breathe {
+  0%, 100% { box-shadow: 0 10px 0 #7a541a, 0 14px 30px rgba(0,0,0,.5), 0 0 0px rgba(246,207,107,0); }
+  50% { box-shadow: 0 10px 0 #7a541a, 0 14px 30px rgba(0,0,0,.5), 0 0 26px rgba(246,207,107,.45); }
+}
+#screen-home .float-card { animation: float-bob 4.2s ease-in-out infinite; }
+#screen-home .float-card:nth-child(2) { animation-delay: 1.1s; animation-duration: 5s; }
+#screen-home .float-card:nth-child(3) { animation-delay: 2s; animation-duration: 4.6s; }
+#screen-home .float-card:nth-child(4) { animation-delay: .6s; animation-duration: 5.4s; }
+@keyframes float-bob {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -9px; }
+}
+.glyph-strip { animation: glyph-glow 5s ease-in-out infinite; }
+@keyframes glyph-glow {
+  0%, 100% { opacity: .55; text-shadow: none; }
+  50% { opacity: .95; text-shadow: 0 0 14px rgba(246,207,107,.5); }
+}
+.leaderboard.frame { transition: box-shadow 2s; animation: lb-breathe 6s ease-in-out infinite; }
+@keyframes lb-breathe {
+  0%, 100% { box-shadow: 0 0 0 rgba(246,207,107,0); }
+  50% { box-shadow: 0 0 18px rgba(246,207,107,.12); }
+}
+
+/* Respect users who opt out of motion */
+@media (prefers-reduced-motion: reduce) {
+  .phone.tremor1, .phone.tremor2,
+  .find-btn, #screen-home .float-card, .glyph-strip, .leaderboard.frame,
+  .drama.ready .drama-track i, .drama.ready .drama-glyph { animation: none !important; }
+}

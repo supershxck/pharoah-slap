@@ -110,10 +110,16 @@ window.PS = window.PS || {};
     if (id === 'home') PS.renderHome();
     else if (id === 'profile') PS.renderProfile();
     else if (id === 'pack') PS.renderPack();
+    // ambient canvas: calm on home, duel-driven on table, off elsewhere
+    if (PS.VFX) {
+      if (id === 'home') PS.VFX.setMode('home');
+      else if (id !== 'table' && id !== 'slap') PS.VFX.setMode(null);
+    }
   };
 
   function init() {
     PS.initTweaks();
+    if (PS.VFX) PS.VFX.boot();
     PS.renderHome();
     wire();
     // AUTH decides the entry screen: auth veil → weighing → home.

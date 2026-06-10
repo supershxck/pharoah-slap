@@ -41,6 +41,11 @@ const CATALOG = [
   { id: "fx_scarabs",   kind: "fx",   value: "scarabs", name: "Scarab Swarm",  rarity: "rare",    weight: 12 },
   { id: "fx_flames",    kind: "fx",   value: "flames",  name: "Ra's Flames",   rarity: "rare",    weight: 12 },
   { id: "fx_ankhs",     kind: "fx",   value: "ankhs",   name: "Rain of Ankhs", rarity: "epic",    weight: 5 },
+  { id: "fx_eclipse",   kind: "fx",   value: "eclipse", name: "Black Sun",     rarity: "epic",    weight: 4 },
+  // Charged-play effects (the drama meter's payoff) — deliberately rare drops.
+  { id: "play_comet",   kind: "play", value: "comet",   name: "Comet Trail",   rarity: "rare",    weight: 8 },
+  { id: "play_sands",   kind: "play", value: "sands",   name: "Desert Vortex", rarity: "rare",    weight: 8 },
+  { id: "play_storm",   kind: "play", value: "storm",   name: "Storm of Set",  rarity: "epic",    weight: 4 },
 ];
 const STARTERS = CATALOG.filter((c) => c.rarity === "starter").map((c) => c.id);
 const CATALOG_BY_ID = Object.fromEntries(CATALOG.map((c) => [c.id, c]));
@@ -351,7 +356,7 @@ async function handleApi(req, res) {
     if (!body) return sendJson(res, 400, { error: "BAD_JSON" }), true;
     const owned = ownedOf(user);
     const eq = equippedOf(user);
-    for (const key of ["skin", "fx"]) {
+    for (const key of ["skin", "fx", "play"]) {
       if (body[key] === undefined) continue;
       if (body[key] === null) { delete eq[key]; continue; }
       const item = CATALOG_BY_ID[String(body[key])];
@@ -411,7 +416,7 @@ function clampNum(n, lo, hi) {
     db.setEconomy(u.id, {
       packs: 5,
       cosmetics: CATALOG.map((c) => c.id),
-      equipped: { skin: "skin_duat", fx: "fx_ankhs" },
+      equipped: { skin: "skin_duat", fx: "fx_ankhs", play: "play_storm" },
     });
     if ((db.getUserById(u.id).xp || 0) < 5000) db.grantXpAndPacks(u.id, 5000, 0);
     console.log(`[auth] master account '${name}' ready — all trials + cosmetics unlocked`);

@@ -604,7 +604,45 @@ class Room {
 }
 
 // ─── HTTP SERVER (health check for Render) ───────────────────────────────────
-const HTML_FILE = path.join(__dirname, "pharaoh-slap.html");
+// v7 ships a MODULAR client (HTML shell + css/ + js/ + uploads/) rather than a
+// single monolithic file, so we serve a small static tree instead of one file.
+const ROOT_DIR = __dirname;
+const INDEX_FILE = path.join(ROOT_DIR, "Pharaoh Slap.html");
+// Only these subdirectories are ever served as static assets (no path escape).
+const STATIC_DIRS = new Set(["css", "js", "uploads"]);
+const MIME = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+};
+
+// Resolve a request path to a safe on-disk file inside ROOT_DIR, or null.
+function resolveStatic(urlPath) {
+  let rel;
+  try {
+    rel = decodeURIComponent(urlPath.split("?")[0]).replace(/^\/+/, "");
+  } catch {
+    return null;
+  }
+  if (!rel) return null;
+  const segs = rel.split("/");
+  // Top-level segment must be a whitelisted asset dir.
+  if (!STATIC_DIRS.has(segs[0])) return null;
+  const abs = path.normalize(path.join(ROOT_DIR, rel));
+  // Guard against `..` traversal escaping ROOT_DIR.
+  if (abs !== ROOT_DIR && !abs.startsWith(ROOT_DIR + path.sep)) return null;
+  return abs;
+}
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -655,11 +693,27 @@ const server = http.createServer((req, res) => {
     res.end(body);
     return;
   }
-  // Serve the game for all other routes
-  fs.readFile(HTML_FILE, (err, data) => {
+  // Static assets: /css/*, /js/*, /uploads/* served straight from disk.
+  const staticPath = resolveStatic(req.url || "/");
+  if (staticPath) {
+    fs.readFile(staticPath, (err, data) => {
+      if (err) {
+        res.writeHead(404, { "Content-Type": "text/plain", ...CORS });
+        res.end("Not found");
+        return;
+      }
+      const ext = path.extname(staticPath).toLowerCase();
+      const type = MIME[ext] || "application/octet-stream";
+      res.writeHead(200, { "Content-Type": type, ...CORS });
+      res.end(data);
+    });
+    return;
+  }
+  // Everything else (/, deep links) → the SPA shell.
+  fs.readFile(INDEX_FILE, (err, data) => {
     if (err) {
       res.writeHead(404, { "Content-Type": "text/plain", ...CORS });
-      res.end("pharaoh-slap.html not found next to server.js");
+      res.end("Pharaoh Slap.html not found next to server.js");
       return;
     }
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", ...CORS });
@@ -750,7 +804,7 @@ wss.on("connection", (ws, req) => {
 
       // ── Join room ──────────────────────────────────────────────────────
       case "JOIN_ROOM": {
-        const code = (msg.roomId || "").toUpperCase().trim();
+        const code = normalizeRoomCode(msg.roomId);
         const room = rooms.get(code);
         if (!room) {
           ws.send(
@@ -1028,7 +1082,8 @@ function dissolveRoom(code) {
     p.ws?.send(JSON.stringify({ type: "ROOM_DISSOLVED" })),
   );
   rooms.delete(code);
-  broadcastLobbyList();
+  // The lobby-list endpoint is computed on demand, so there is nothing else to
+  // fan out here unless a future push channel is introduced.
 }
 // ─── START ────────────────────────────────────────────────────────────────────
 server.listen(PORT, () => {

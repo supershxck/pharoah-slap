@@ -57,8 +57,35 @@ const CATALOG = [
   { id: "charm_gild",   kind: "charm", value: "gild",   name: "Gold Leaf",     rarity: "rare",    weight: 10 },
   { id: "charm_eye",    kind: "charm", value: "eye",    name: "Eye of Horus",  rarity: "rare",    weight: 10 },
   { id: "charm_aten",   kind: "charm", value: "aten",   name: "Aten's Halo",   rarity: "epic",    weight: 5 },
+  // ── PREMIUM (weight 0 = never rolls in free packs; store bundles only) ──
+  { id: "skin_pharaoh",    kind: "skin",  value: "pharaoh",  name: "Pharaoh's Gold",  rarity: "premium", weight: 0 },
+  { id: "charm_cartouche", kind: "charm", value: "cartouche",name: "Royal Cartouche", rarity: "premium", weight: 0 },
+  { id: "fx_crowns",       kind: "fx",    value: "crowns",   name: "Crown Rain",      rarity: "premium", weight: 0 },
+  { id: "skin_anubisn",    kind: "skin",  value: "anubisn",  name: "Anubis Night",    rarity: "premium", weight: 0 },
+  { id: "table_necro",     kind: "table", value: "necro",    name: "Necropolis",      rarity: "premium", weight: 0 },
+  { id: "fx_souls",        kind: "fx",    value: "souls",    name: "Soul Wisps",      rarity: "premium", weight: 0 },
+  { id: "skin_stars",      kind: "skin",  value: "stars",    name: "Star Field",      rarity: "premium", weight: 0 },
+  { id: "play_nova",       kind: "play",  value: "nova",     name: "Supernova",       rarity: "premium", weight: 0 },
+  { id: "charm_moon",      kind: "charm", value: "moon",     name: "Khonsu's Moon",   rarity: "premium", weight: 0 },
 ];
 const CARD_KEY_RE = /^([2-9]|1[0-4])-(spades|hearts|diamonds|clubs)$/;
+
+// ─── STORE (premium bundles — $2.99 each, deterministic contents) ────────────
+// Payments: POST /api/store/checkout is the seam. Until a provider (Stripe /
+// App Store) is wired, it grants only when DEV_FREE_PURCHASES=1 (testing) and
+// otherwise answers 501 so the client can show a friendly "coming at launch".
+const STORE = [
+  { id: "pack_royal",     name: "Royal Treasury",    priceCents: 299,
+    tagline: "Gold for the worthy",
+    items: ["skin_pharaoh", "charm_cartouche", "fx_crowns"] },
+  { id: "pack_duat",      name: "Night of the Duat", priceCents: 299,
+    tagline: "What waits below",
+    items: ["skin_anubisn", "table_necro", "fx_souls"] },
+  { id: "pack_celestial", name: "Celestial Bundle",  priceCents: 299,
+    tagline: "The sky, purchased",
+    items: ["skin_stars", "play_nova", "charm_moon"] },
+];
+const STORE_BY_ID = Object.fromEntries(STORE.map((p) => [p.id, p]));
 const STARTERS = CATALOG.filter((c) => c.rarity === "starter").map((c) => c.id);
 const CATALOG_BY_ID = Object.fromEntries(CATALOG.map((c) => [c.id, c]));
 const PACK_SIZE = 3;
@@ -336,6 +363,49 @@ async function handleApi(req, res) {
     }
 
     return sendJson(res, 200, { user: publicUser(db.getUserById(user.id)), gained }), true;
+  }
+
+  // ── GET /api/store — premium catalog with ownership flags ──────────────────
+  if (url === "/api/store" && req.method === "GET") {
+    const user = authUser(req);
+    const owned = user ? ownedOf(user) : new Set();
+    return sendJson(res, 200, {
+      packs: STORE.map((p) => ({
+        id: p.id, name: p.name, tagline: p.tagline, priceCents: p.priceCents,
+        items: p.items.map((id) => {
+          const c = CATALOG_BY_ID[id];
+          return { id, kind: c.kind, value: c.value, name: c.name, owned: owned.has(id) };
+        }),
+        owned: p.items.every((id) => owned.has(id)),
+      })),
+    }), true;
+  }
+
+  // ── POST /api/store/checkout — the payment seam ─────────────────────────────
+  if (url === "/api/store/checkout" && req.method === "POST") {
+    const user = authUser(req);
+    if (!user) return sendJson(res, 401, { error: "UNAUTHORIZED" }), true;
+    const body = await readBody(req);
+    if (!body) return sendJson(res, 400, { error: "BAD_JSON" }), true;
+    const pack = STORE_BY_ID[String(body.packId || "")];
+    if (!pack) return sendJson(res, 400, { error: "BAD_PACK" }), true;
+    const owned = ownedOf(user);
+    if (pack.items.every((id) => owned.has(id)))
+      return sendJson(res, 400, { error: "ALREADY_OWNED", message: "You already own this bundle." }), true;
+
+    // DEV/test grant — lets the full flow be exercised before payments launch.
+    if (process.env.DEV_FREE_PURCHASES === "1") {
+      pack.items.forEach((id) => owned.add(id));
+      db.setEconomy(user.id, { packs: user.packs || 0, cosmetics: [...owned], equipped: equippedOf(user) });
+      const updated = db.recordPurchase(user.id, { packId: pack.id, cents: 0, mode: "dev", at: new Date().toISOString() });
+      return sendJson(res, 200, { granted: true, user: publicUser(updated) }), true;
+    }
+    // TODO(payments): create a Stripe Checkout session / App Store transaction
+    // here, grant via verified webhook, then recordPurchase with real cents.
+    return sendJson(res, 501, {
+      error: "PAYMENTS_NOT_CONFIGURED",
+      message: "The treasury opens at launch — purchases aren't live yet.",
+    }), true;
   }
 
   // ── POST /api/match — any finished match: XP, totals, pack drip ────────────

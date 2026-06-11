@@ -60,6 +60,7 @@ for (const col of [
   "packs INTEGER DEFAULT 0",
   "cosmetics TEXT DEFAULT '[]'",
   "equipped TEXT DEFAULT '{}'",
+  "purchases TEXT DEFAULT '[]'",
 ]) {
   try { db.exec(`ALTER TABLE users ADD COLUMN ${col}`); } catch { /* exists */ }
 }
@@ -86,6 +87,7 @@ const stmt = {
            packs = packs + ?
      WHERE id = ?`),
   setEconomy: db.prepare(`UPDATE users SET packs = ?, cosmetics = ?, equipped = ? WHERE id = ?`),
+  setPurchases: db.prepare(`UPDATE users SET purchases = ? WHERE id = ?`),
   upsertProgress: db.prepare(`
     INSERT INTO progress (user_id, god_id, stars, best_stats, completed_at)
     VALUES (@user_id, @god_id, @stars, @best_stats, datetime('now'))
@@ -136,6 +138,13 @@ module.exports = {
   },
   setEconomy(userId, { packs, cosmetics, equipped }) {
     stmt.setEconomy.run(packs | 0, JSON.stringify(cosmetics || []), JSON.stringify(equipped || {}), userId);
+    return stmt.userById.get(userId);
+  },
+  recordPurchase(userId, entry) {
+    const u = stmt.userById.get(userId);
+    let arr; try { arr = JSON.parse(u.purchases || "[]"); } catch { arr = []; }
+    arr.push(entry);
+    stmt.setPurchases.run(JSON.stringify(arr), userId);
     return stmt.userById.get(userId);
   },
   _raw: db, // escape hatch for migrations/tests

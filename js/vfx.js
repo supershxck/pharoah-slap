@@ -162,6 +162,13 @@ window.PS = window.PS || {};
       spawnSparks(x, y, 30, BLUE, 280, false);
       spawnRing(x, y, BLUE, 160, 4);
     },
+    nova(x, y) {
+      flash(WHITE, 0.4);
+      spawnRing(x, y, WHITE, 200, 5);
+      spawnRing(x, y, GOLD, 150, 4);
+      spawnSparks(x, y, 40, WHITE, 320, false);
+      spawnSparks(x, y, 20, VIOLET, 220, false);
+    },
     sands(x, y) {
       flash([216, 180, 110], 0.14);
       for (let i = 0; i < 40; i++) {

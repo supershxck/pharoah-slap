@@ -35,6 +35,16 @@ window.PS = window.PS || {};
     { id: 'charm_gild',   kind: 'charm', value: 'gild',   name: 'Gold Leaf',     rarity: 'rare',    weight: 10, glyph: '✨' },
     { id: 'charm_eye',    kind: 'charm', value: 'eye',    name: 'Eye of Horus',  rarity: 'rare',    weight: 10, glyph: '\u{13080}' },
     { id: 'charm_aten',   kind: 'charm', value: 'aten',   name: "Aten's Halo",   rarity: 'epic',    weight: 5,  glyph: '☀' },
+    // premium — store bundles only (weight 0 keeps them out of free packs)
+    { id: 'skin_pharaoh',    kind: 'skin',  value: 'pharaoh',   name: "Pharaoh's Gold",  rarity: 'premium', weight: 0, glyph: null },
+    { id: 'charm_cartouche', kind: 'charm', value: 'cartouche', name: 'Royal Cartouche', rarity: 'premium', weight: 0, glyph: '\u{13379}' },
+    { id: 'fx_crowns',       kind: 'fx',    value: 'crowns',    name: 'Crown Rain',      rarity: 'premium', weight: 0, glyph: '\u{1F451}' },
+    { id: 'skin_anubisn',    kind: 'skin',  value: 'anubisn',   name: 'Anubis Night',    rarity: 'premium', weight: 0, glyph: null },
+    { id: 'table_necro',     kind: 'table', value: 'necro',     name: 'Necropolis',      rarity: 'premium', weight: 0, glyph: '\u{26B0}' },
+    { id: 'fx_souls',        kind: 'fx',    value: 'souls',     name: 'Soul Wisps',      rarity: 'premium', weight: 0, glyph: '✧' },
+    { id: 'skin_stars',      kind: 'skin',  value: 'stars',     name: 'Star Field',      rarity: 'premium', weight: 0, glyph: null },
+    { id: 'play_nova',       kind: 'play',  value: 'nova',      name: 'Supernova',       rarity: 'premium', weight: 0, glyph: '\u{1F4A5}' },
+    { id: 'charm_moon',      kind: 'charm', value: 'moon',      name: "Khonsu's Moon",   rarity: 'premium', weight: 0, glyph: '\u{1F319}' },
   ];
   const BY_ID = Object.fromEntries(CATALOG.map(c => [c.id, c]));
   const STARTERS = CATALOG.filter(c => c.rarity === 'starter').map(c => c.id);
@@ -259,6 +269,8 @@ window.PS = window.PS || {};
     flames:  { glyphs: ['\u{1F525}'], n: 10, rise: true },
     ankhs:   { glyphs: ['☥'], n: 12, rise: false, fall: true },
     eclipse: { glyphs: ['\u{1F311}', '✸'], n: 8, rise: false },
+    crowns:  { glyphs: ['\u{1F451}'], n: 10, rise: false, fall: true },
+    souls:   { glyphs: ['✧', '✦'], n: 14, rise: true },
   };
   PS.playSlapFx = function (host) {
     const name = PS.equippedFx;

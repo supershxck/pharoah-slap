@@ -606,6 +606,57 @@
 .card.charm-aten .charm-mark { color: #ffd768; }
 .card.charm-scarab .charm-mark, .card.charm-lotus .charm-mark { filter: none; }
 
+/* ==================== PREMIUM COSMETICS =================================== */
+.card.back.pharaoh { background: linear-gradient(160deg, #8a6515 0%, #c79a32 45%, #6e4d0e 100%); }
+.card.back.pharaoh::before {
+  background: repeating-linear-gradient(0deg, rgba(255,233,168,.25) 0 3px, transparent 3px 10px);
+}
+.card.back.pharaoh .seal { color: #fff3cf; text-shadow: 0 0 12px rgba(255,233,168,.95); }
+.card.back.anubisn { background: linear-gradient(170deg, #0b0b16 0%, #1d1d33 55%, #07070e 100%); }
+.card.back.anubisn::before {
+  background: radial-gradient(circle at 50% 40%, rgba(138,90,216,.4) 0 16%, transparent 40%);
+}
+.card.back.anubisn .seal { color: #8a5ad8; text-shadow: 0 0 10px rgba(138,90,216,.9); }
+.card.back.stars { background: linear-gradient(180deg, #0a1030 0%, #060a20 100%); }
+.card.back.stars::before {
+  background:
+    radial-gradient(circle at 22% 22%, rgba(255,255,255,.8) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 68% 38%, rgba(255,255,255,.6) 0 1px, transparent 2px),
+    radial-gradient(circle at 40% 62%, rgba(160,200,255,.7) 0 1.4px, transparent 2.2px),
+    radial-gradient(circle at 80% 76%, rgba(255,255,255,.5) 0 1px, transparent 2px),
+    radial-gradient(circle at 14% 82%, rgba(255,220,160,.6) 0 1.2px, transparent 2px);
+}
+.card.back.stars .seal { color: #cfe0ff; text-shadow: 0 0 10px rgba(160,200,255,.9); }
+.phone.table-necro { background: linear-gradient(180deg, #181420 0%, #0f0c16 40%, #07050b 100%); }
+.card.charm-cartouche { box-shadow: inset 0 0 0 1.5px rgba(246,207,107,.55); }
+.card.charm-cartouche .charm-mark { color: var(--gold-1); }
+.card.charm-moon .charm-mark { filter: drop-shadow(0 0 5px rgba(160,200,255,.9)); }
+.citem.premium .crar, .pack-item.premium .cname { color: #ffd768; }
+.citem.premium { border-color: rgba(255,215,104,.45); }
+
+/* ==================== THE TREASURY (store) ================================ */
+#screen-store { padding: 22px 18px; gap: 12px; overflow-y: auto;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+#store-body { display: flex; flex-direction: column; gap: 14px; }
+.store-note { font-size: 11px; color: var(--muted); text-align: center; font-family: var(--font-head); letter-spacing: .06em; }
+.store-note.dim { opacity: .7; }
+.store-pack {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 16px 14px;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border: 1px solid rgba(255,215,104,.35);
+  border-radius: var(--frame-radius);
+  box-shadow: 0 12px 36px rgba(0,0,0,.45);
+}
+.store-pack.owned { opacity: .72; }
+.sp-name { font-family: var(--font-display); font-weight: 900; font-size: 18px; }
+.sp-tag { font-size: 11px; color: var(--muted); font-family: var(--font-head); letter-spacing: .1em; text-transform: uppercase; }
+.sp-items { display: flex; gap: 12px; justify-content: center; margin: 6px 0 2px; }
+.sp-item { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 76px; }
+.sp-iname { font-size: 10px; color: var(--parchment); text-align: center; line-height: 1.2; }
+.sp-ikind { font-size: 8.5px; color: #ffd768; letter-spacing: .08em; text-transform: uppercase; }
+.store-pack .btn { width: 100%; max-width: 220px; }
+
 /* ==================== THE CARD FORGE ====================================== */
 #forge-veil {
   position: absolute; inset: 0; z-index: 70;

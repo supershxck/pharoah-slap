@@ -67,6 +67,14 @@ const CATALOG = [
   { id: "skin_stars",      kind: "skin",  value: "stars",    name: "Star Field",      rarity: "premium", weight: 0 },
   { id: "play_nova",       kind: "play",  value: "nova",     name: "Supernova",       rarity: "premium", weight: 0 },
   { id: "charm_moon",      kind: "charm", value: "moon",     name: "Khonsu's Moon",   rarity: "premium", weight: 0 },
+  // ── SEASONAL (Season 1 "The Inundation" — granted by the season ladder) ──
+  { id: "skin_reedboat", kind: "skin",  value: "reedboat", name: "Reed Boat",     rarity: "seasonal", weight: 0 },
+  { id: "charm_fish",    kind: "charm", value: "fish",     name: "Nile Fish",     rarity: "seasonal", weight: 0 },
+  { id: "skin_flood",    kind: "skin",  value: "flood",    name: "Floodwater",    rarity: "seasonal", weight: 0 },
+  { id: "fx_deluge",     kind: "fx",    value: "deluge",   name: "Deluge",        rarity: "seasonal", weight: 0 },
+  { id: "play_tide",     kind: "play",  value: "tide",     name: "The Tide",      rarity: "seasonal", weight: 0 },
+  { id: "table_sunken",  kind: "table", value: "sunken",   name: "Sunken Hall",   rarity: "seasonal", weight: 0 },
+  { id: "charm_lily",    kind: "charm", value: "lily",     name: "Flood Lily",    rarity: "seasonal", weight: 0 },
 ];
 const CARD_KEY_RE = /^([2-9]|1[0-4])-(spades|hearts|diamonds|clubs)$/;
 
@@ -86,6 +94,65 @@ const STORE = [
     items: ["skin_stars", "play_nova", "charm_moon"] },
 ];
 const STORE_BY_ID = Object.fromEntries(STORE.map((p) => [p.id, p]));
+
+// ─── SEASON 1 — "The Inundation" ─────────────────────────────────────────────
+// 8 weeks, 30 tiers, tier = season XP / 150 (season XP mirrors match XP).
+// Pass = $4.99 product through the same checkout seam (pack_season1).
+const SEASON = {
+  id: "s1",
+  name: "The Inundation",
+  tagline: "The Nile rises",
+  start: "2026-06-11T00:00:00Z",
+  end: "2026-08-06T00:00:00Z",
+  tiers: 30,
+  xpPerTier: 150,
+};
+STORE.push({ id: "pack_season1", name: "Season 1 Pass — The Inundation",
+  priceCents: 499, tagline: "All 30 tiers of the flood", season: SEASON.id, items: [] });
+STORE_BY_ID.pack_season1 = STORE[STORE.length - 1];
+
+// reward = { packs: n } and/or { item: catalogId } and/or { title: str }
+const SEASON_REWARDS = {
+  1:  { pass: { item: "skin_flood" } },
+  2:  { free: { packs: 1 } },
+  3:  { pass: { packs: 1 } },
+  5:  { free: { packs: 1 } },
+  6:  { pass: { packs: 1 } },
+  8:  { free: { packs: 1 }, pass: { item: "fx_deluge" } },
+  10: { free: { item: "skin_reedboat" } },
+  12: { pass: { packs: 2 } },
+  13: { free: { packs: 1 } },
+  15: { pass: { packs: 2 } },
+  16: { free: { packs: 2 }, pass: { item: "play_tide" } },
+  18: { pass: { packs: 2 } },
+  20: { free: { packs: 2 } },
+  21: { pass: { packs: 2 } },
+  24: { pass: { item: "table_sunken" } },
+  25: { free: { item: "charm_fish" } },
+  27: { pass: { packs: 3 } },
+  28: { free: { packs: 2 } },
+  30: { free: { packs: 3 }, pass: { item: "charm_lily", title: "Bearer of the Flood" } },
+};
+
+function ensureSeason(user) {
+  if (user.season_id !== SEASON.id) return db.resetSeason(user.id, SEASON.id);
+  return user;
+}
+function seasonTier(u) {
+  return Math.min(SEASON.tiers, Math.floor((u.season_xp || 0) / SEASON.xpPerTier));
+}
+function seasonClaimed(u) {
+  try { const a = JSON.parse(u.season_claimed || "[]"); return Array.isArray(a) ? a : []; } catch { return []; }
+}
+function seasonPublic(u) {
+  return {
+    id: SEASON.id, name: SEASON.name, tagline: SEASON.tagline, endsAt: SEASON.end,
+    tiers: SEASON.tiers, xpPerTier: SEASON.xpPerTier,
+    xp: u.season_xp || 0, tier: seasonTier(u),
+    claimed: seasonClaimed(u), pass: !!u.season_pass,
+    rewards: SEASON_REWARDS,
+  };
+}
 const STARTERS = CATALOG.filter((c) => c.rarity === "starter").map((c) => c.id);
 const CATALOG_BY_ID = Object.fromEntries(CATALOG.map((c) => [c.id, c]));
 const PACK_SIZE = 3;
@@ -185,6 +252,7 @@ function publicUser(u) {
     packs: u.packs || 0,
     cosmetics: [...ownedOf(u)],
     equipped: equippedOf(u),
+    season: seasonPublic(u),
   };
 }
 
@@ -360,6 +428,8 @@ async function handleApi(req, res) {
         gained.packs += 3;
       }
       db.grantXpAndPacks(user.id, gained.xp, gained.packs);
+      ensureSeason(user);
+      db.addSeasonXp(user.id, gained.xp);
     }
 
     return sendJson(res, 200, { user: publicUser(db.getUserById(user.id)), gained }), true;
@@ -390,8 +460,26 @@ async function handleApi(req, res) {
     const pack = STORE_BY_ID[String(body.packId || "")];
     if (!pack) return sendJson(res, 400, { error: "BAD_PACK" }), true;
     const owned = ownedOf(user);
-    if (pack.items.every((id) => owned.has(id)))
+    // (season passes have no item list — their ownership check lives below)
+    if (!pack.season && pack.items.length && pack.items.every((id) => owned.has(id)))
       return sendJson(res, 400, { error: "ALREADY_OWNED", message: "You already own this bundle." }), true;
+
+    // Season pass purchase (no items — sets the pass flag instead)
+    if (pack.season) {
+      ensureSeason(user);
+      const fresh = db.getUserById(user.id);
+      if (fresh.season_pass)
+        return sendJson(res, 400, { error: "ALREADY_OWNED", message: "You already hold this season's pass." }), true;
+      if (process.env.DEV_FREE_PURCHASES === "1") {
+        db.setSeasonPass(user.id);
+        const updated = db.recordPurchase(user.id, { packId: pack.id, cents: 0, mode: "dev", at: new Date().toISOString() });
+        return sendJson(res, 200, { granted: true, user: publicUser(updated) }), true;
+      }
+      return sendJson(res, 501, {
+        error: "PAYMENTS_NOT_CONFIGURED",
+        message: "The treasury opens at launch — purchases aren't live yet.",
+      }), true;
+    }
 
     // DEV/test grant — lets the full flow be exercised before payments launch.
     if (process.env.DEV_FREE_PURCHASES === "1") {
@@ -408,6 +496,48 @@ async function handleApi(req, res) {
     }), true;
   }
 
+  // ── GET /api/season — current season state for this player ─────────────────
+  if (url === "/api/season" && req.method === "GET") {
+    const user0 = authUser(req);
+    if (!user0) return sendJson(res, 401, { error: "UNAUTHORIZED" }), true;
+    ensureSeason(user0);
+    return sendJson(res, 200, { season: seasonPublic(db.getUserById(user0.id)) }), true;
+  }
+
+  // ── POST /api/season/claim — claim a reached tier (free + pass tracks) ─────
+  if (url === "/api/season/claim" && req.method === "POST") {
+    const user0 = authUser(req);
+    if (!user0) return sendJson(res, 401, { error: "UNAUTHORIZED" }), true;
+    ensureSeason(user0);
+    const body = await readBody(req);
+    if (!body) return sendJson(res, 400, { error: "BAD_JSON" }), true;
+    const tier = clampNum(body.tier, 1, SEASON.tiers);
+    const u = db.getUserById(user0.id);
+    if (tier > seasonTier(u))
+      return sendJson(res, 400, { error: "TIER_NOT_REACHED" }), true;
+    const claimed = seasonClaimed(u);
+    if (claimed.includes(tier))
+      return sendJson(res, 400, { error: "ALREADY_CLAIMED" }), true;
+    const r = SEASON_REWARDS[tier] || {};
+    const grants = [r.free, u.season_pass ? r.pass : null].filter(Boolean);
+    if (!grants.length && !r.pass)
+      return sendJson(res, 400, { error: "NO_REWARD" }), true;
+    let packs = 0;
+    const owned = ownedOf(u);
+    for (const g of grants) {
+      if (g.packs) packs += g.packs;
+      if (g.item && CATALOG_BY_ID[g.item]) owned.add(g.item);
+    }
+    db.setEconomy(u.id, { packs: (u.packs || 0) + packs, cosmetics: [...owned], equipped: equippedOf(u) });
+    claimed.push(tier);
+    const updated = db.claimSeasonTier(u.id, claimed);
+    return sendJson(res, 200, {
+      user: publicUser(updated),
+      gained: { packs, items: grants.filter((g) => g.item).map((g) => g.item),
+        passLocked: !u.season_pass && !!r.pass },
+    }), true;
+  }
+
   // ── POST /api/match — any finished match: XP, totals, pack drip ────────────
   if (url === "/api/match" && req.method === "POST") {
     const user = authUser(req);
@@ -421,12 +551,15 @@ async function handleApi(req, res) {
     let packs = gamesAfter % GAMES_PER_PACK === 0 ? 1 : 0; // every 5th game
     const afterLv = levelFromXp((user.xp || 0) + xp).level;
     packs += Math.max(0, afterLv - beforeLv);              // +1 per level-up
-    const updated = db.addMatch(user.id, {
+    ensureSeason(user);
+    const updated0 = db.addMatch(user.id, {
       xp, won,
       cards: clampNum(body.cards, 0, 200),
       slaps: clampNum(body.slaps, 0, 50),
       packs,
     });
+    db.addSeasonXp(user.id, xp);
+    const updated = db.getUserById(user.id);
     return sendJson(res, 200, {
       user: publicUser(updated),
       gained: { xp, packs, leveledUp: afterLv > beforeLv },

@@ -120,6 +120,7 @@ window.PS = window.PS || {};
     else if (id === 'settings' && PS.SETTINGS) PS.SETTINGS.render();
     else if (id === 'stats' && PS.STATS) PS.STATS.render();
     else if (id === 'store' && PS.STORE) PS.STORE.render();
+    else if (id === 'season' && PS.SEASON) PS.SEASON.open();
     // ambient canvas: glyph rain on auth, calm on home, duel-driven on table
     if (PS.VFX) {
       if (id === 'home') PS.VFX.setMode('home');

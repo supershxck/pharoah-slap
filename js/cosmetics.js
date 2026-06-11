@@ -45,6 +45,14 @@ window.PS = window.PS || {};
     { id: 'skin_stars',      kind: 'skin',  value: 'stars',     name: 'Star Field',      rarity: 'premium', weight: 0, glyph: null },
     { id: 'play_nova',       kind: 'play',  value: 'nova',      name: 'Supernova',       rarity: 'premium', weight: 0, glyph: '\u{1F4A5}' },
     { id: 'charm_moon',      kind: 'charm', value: 'moon',      name: "Khonsu's Moon",   rarity: 'premium', weight: 0, glyph: '\u{1F319}' },
+    // seasonal — Season 1 'The Inundation' ladder rewards
+    { id: 'skin_reedboat', kind: 'skin',  value: 'reedboat', name: 'Reed Boat',   rarity: 'seasonal', weight: 0, glyph: null },
+    { id: 'charm_fish',    kind: 'charm', value: 'fish',     name: 'Nile Fish',   rarity: 'seasonal', weight: 0, glyph: '\u{1F41F}' },
+    { id: 'skin_flood',    kind: 'skin',  value: 'flood',    name: 'Floodwater',  rarity: 'seasonal', weight: 0, glyph: null },
+    { id: 'fx_deluge',     kind: 'fx',    value: 'deluge',   name: 'Deluge',      rarity: 'seasonal', weight: 0, glyph: '\u{1F30A}' },
+    { id: 'play_tide',     kind: 'play',  value: 'tide',     name: 'The Tide',    rarity: 'seasonal', weight: 0, glyph: '\u{1F4A7}' },
+    { id: 'table_sunken',  kind: 'table', value: 'sunken',   name: 'Sunken Hall', rarity: 'seasonal', weight: 0, glyph: '\u{1F3DB}' },
+    { id: 'charm_lily',    kind: 'charm', value: 'lily',     name: 'Flood Lily',  rarity: 'seasonal', weight: 0, glyph: '\u{1FAB7}' },
   ];
   const BY_ID = Object.fromEntries(CATALOG.map(c => [c.id, c]));
   const STARTERS = CATALOG.filter(c => c.rarity === 'starter').map(c => c.id);
@@ -271,6 +279,7 @@ window.PS = window.PS || {};
     eclipse: { glyphs: ['\u{1F311}', '✸'], n: 8, rise: false },
     crowns:  { glyphs: ['\u{1F451}'], n: 10, rise: false, fall: true },
     souls:   { glyphs: ['✧', '✦'], n: 14, rise: true },
+    deluge:  { glyphs: ['\u{1F4A7}', '\u{1F30A}'], n: 14, rise: false, fall: true },
   };
   PS.playSlapFx = function (host) {
     const name = PS.equippedFx;

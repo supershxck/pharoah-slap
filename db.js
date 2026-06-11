@@ -61,6 +61,10 @@ for (const col of [
   "cosmetics TEXT DEFAULT '[]'",
   "equipped TEXT DEFAULT '{}'",
   "purchases TEXT DEFAULT '[]'",
+  "season_id TEXT DEFAULT NULL",
+  "season_xp INTEGER DEFAULT 0",
+  "season_claimed TEXT DEFAULT '[]'",
+  "season_pass INTEGER DEFAULT 0",
 ]) {
   try { db.exec(`ALTER TABLE users ADD COLUMN ${col}`); } catch { /* exists */ }
 }
@@ -88,6 +92,10 @@ const stmt = {
      WHERE id = ?`),
   setEconomy: db.prepare(`UPDATE users SET packs = ?, cosmetics = ?, equipped = ? WHERE id = ?`),
   setPurchases: db.prepare(`UPDATE users SET purchases = ? WHERE id = ?`),
+  resetSeason: db.prepare(`UPDATE users SET season_id = ?, season_xp = 0, season_claimed = '[]', season_pass = 0 WHERE id = ?`),
+  addSeasonXp: db.prepare(`UPDATE users SET season_xp = season_xp + ? WHERE id = ?`),
+  setSeasonClaimed: db.prepare(`UPDATE users SET season_claimed = ? WHERE id = ?`),
+  setSeasonPass: db.prepare(`UPDATE users SET season_pass = 1 WHERE id = ?`),
   upsertProgress: db.prepare(`
     INSERT INTO progress (user_id, god_id, stars, best_stats, completed_at)
     VALUES (@user_id, @god_id, @stars, @best_stats, datetime('now'))
@@ -138,6 +146,21 @@ module.exports = {
   },
   setEconomy(userId, { packs, cosmetics, equipped }) {
     stmt.setEconomy.run(packs | 0, JSON.stringify(cosmetics || []), JSON.stringify(equipped || {}), userId);
+    return stmt.userById.get(userId);
+  },
+  resetSeason(userId, seasonId) {
+    stmt.resetSeason.run(seasonId, userId);
+    return stmt.userById.get(userId);
+  },
+  addSeasonXp(userId, xp) {
+    stmt.addSeasonXp.run(xp | 0, userId);
+  },
+  claimSeasonTier(userId, claimedArr) {
+    stmt.setSeasonClaimed.run(JSON.stringify(claimedArr), userId);
+    return stmt.userById.get(userId);
+  },
+  setSeasonPass(userId) {
+    stmt.setSeasonPass.run(userId);
     return stmt.userById.get(userId);
   },
   recordPurchase(userId, entry) {

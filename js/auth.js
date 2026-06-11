@@ -38,6 +38,7 @@ window.PS = window.PS || {};
     PS.USER = u;
     PS.PROFILE.name = u.username || PS.PROFILE.name;
     if (PS.COSMO) PS.COSMO.syncFromUser(u);   // xp/level/packs/cosmetics
+    if (u.season) PS._seasonState = u.season; // home banner + season screen
   }
 
   function setMode(m) {

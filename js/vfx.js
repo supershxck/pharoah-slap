@@ -162,6 +162,15 @@ window.PS = window.PS || {};
       spawnSparks(x, y, 30, BLUE, 280, false);
       spawnRing(x, y, BLUE, 160, 4);
     },
+    tide(x, y) {
+      flash(TEAL, 0.22);
+      for (let i = 0; i < 26; i++) {
+        push({ k: 'spark', x: -20, y: y - 80 + Math.random() * 160, vx: 380 + Math.random() * 160,
+          vy: Math.sin(i) * 30, g: 0, life: 0.7, t: i * 0.012, r: 2 + Math.random() * 2.4,
+          col: i % 3 ? TEAL : WHITE });
+      }
+      spawnRing(x, y, TEAL, 150, 4);
+    },
     nova(x, y) {
       flash(WHITE, 0.4);
       spawnRing(x, y, WHITE, 200, 5);

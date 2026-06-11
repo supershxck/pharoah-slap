@@ -692,3 +692,109 @@ html, body, .phone, .phone * { touch-action: manipulation; }
   .find-btn, #screen-home .float-card, .glyph-strip, .leaderboard.frame,
   .drama.ready .drama-track i, .drama.ready .drama-glyph { animation: none !important; }
 }
+
+/* ==================== HOME: shop pill + season banner + modes ============= */
+.pill.shop { cursor: pointer; color: var(--gold-1); border-color: rgba(255,215,104,.5); white-space: nowrap; }
+.season-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 13px; border-radius: 13px; cursor: pointer;
+  background: linear-gradient(90deg, rgba(13,42,94,.85), rgba(18,58,122,.55));
+  border: 1px solid rgba(82,220,210,.4);
+  box-shadow: 0 4px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+  color: var(--parchment); text-align: left;
+}
+.season-banner .sb-wave { font-size: 20px; }
+.season-banner .sb-meta { flex: 1; display: flex; flex-direction: column; }
+.season-banner .sb-meta b { font-family: var(--font-head); font-size: 12.5px; letter-spacing: .06em; color: #aef0ea; }
+.season-banner .sb-meta i { font-style: normal; font-size: 10px; color: var(--muted); }
+.season-banner .sb-go { font-size: 20px; color: #52dcd2; }
+#home-modes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+.mode-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 4px; border-radius: 11px; cursor: pointer;
+  background: rgba(0,0,0,.26); border: 1px solid rgba(242,200,90,.2);
+  color: var(--parchment); transition: border-color .15s, transform .12s;
+}
+.mode-tile:active { transform: scale(.95); }
+.mode-tile .mg { font-size: 17px; }
+.mode-tile .mn { font-family: var(--font-head); font-weight: 700; font-size: 10.5px; }
+.mode-tile .ms2 { font-size: 8.5px; color: var(--muted); }
+
+/* ==================== ROYAL COURTS & ORNATE ACES ========================== */
+.card.face .court { display: flex; align-items: center; justify-content: center; opacity: .85; }
+.card.face .court .royal {
+  font-family: 'Noto Sans Egyptian Hieroglyphs', serif;
+  font-size: calc(var(--cw, 120px) * .42);
+  line-height: 1; opacity: .9;
+  text-shadow: 0 0 calc(var(--cw, 120px) * .06) currentColor;
+}
+.card.face .center-suit { display: none; }
+.card.ace .ace-orn {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.card.ace .ace-orn .ao-ring {
+  position: absolute; width: 62%; aspect-ratio: 1; border-radius: 50%;
+  border: calc(var(--cw, 120px) * .018) solid currentColor;
+  box-shadow: 0 0 0 calc(var(--cw, 120px) * .035) rgba(242,200,90,.18),
+              inset 0 0 calc(var(--cw, 120px) * .12) rgba(242,200,90,.25);
+  opacity: .75;
+}
+.card.ace .ace-orn .ao-suit {
+  font-size: calc(var(--cw, 120px) * .4);
+  line-height: 1; z-index: 1;
+  text-shadow: 0 0 calc(var(--cw, 120px) * .08) currentColor;
+}
+.card.ace .ace-orn .ao-ankh {
+  position: absolute; top: 9%;
+  font-family: 'Noto Sans Egyptian Hieroglyphs', serif;
+  font-size: calc(var(--cw, 120px) * .13);
+  color: var(--gold-2, #e2ab3c); opacity: .85;
+}
+
+/* ==================== SEASONAL COSMETICS (S1: The Inundation) ============= */
+.card.back.reedboat { background: linear-gradient(180deg, #2c4a1e 0%, #1d3413 55%, #11200a 100%); }
+.card.back.reedboat .seal { color: #a8d38a; text-shadow: 0 0 8px rgba(150,210,120,.8); }
+.card.back.flood { background: linear-gradient(180deg, #0a3a52 0%, #0d5170 50%, #062536 100%); }
+.card.back.flood::before {
+  background: repeating-radial-gradient(ellipse at 50% -20%, rgba(82,220,210,.25) 0 9px, transparent 9px 24px);
+}
+.card.back.flood .seal { color: #52dcd2; text-shadow: 0 0 10px rgba(82,220,210,.9); }
+.phone.table-sunken { background: linear-gradient(180deg, #06222e 0%, #083242 45%, #031219 100%); }
+.card.charm-fish .charm-mark, .card.charm-lily .charm-mark { filter: drop-shadow(0 0 4px rgba(82,220,210,.8)); }
+.citem.seasonal .crar { color: #52dcd2; }
+.citem.seasonal { border-color: rgba(82,220,210,.4); }
+
+/* ==================== SEASON SCREEN ======================================= */
+#screen-season { padding: 22px 18px; gap: 12px; overflow-y: auto;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+#season-body { display: flex; flex-direction: column; gap: 12px; }
+.season-head { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px; border-radius: 14px; background: rgba(0,0,0,.24); border: 1px solid rgba(82,220,210,.35); }
+.sh-tier { font-family: var(--font-display); font-weight: 900; font-size: 26px; }
+.sh-tier .sh-max { font-size: 14px; color: var(--muted); }
+.sh-bar { width: 100%; height: 8px; border-radius: 5px; background: rgba(0,0,0,.45);
+  border: 1px solid rgba(82,220,210,.3); overflow: hidden; }
+.sh-bar i { display: block; height: 100%; background: linear-gradient(90deg, #1d7a8c, #52dcd2); transition: width .4s; }
+.sh-xp { font-size: 10.5px; color: var(--muted); font-family: var(--font-head); letter-spacing: .07em; }
+.season-track { display: flex; flex-direction: column; gap: 7px; }
+.season-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px; border-radius: 12px;
+  background: rgba(0,0,0,.22); border: 1px solid rgba(242,200,90,.14);
+}
+.season-row.ready { border-color: rgba(116,226,154,.5); box-shadow: 0 0 10px rgba(116,226,154,.15); }
+.season-row.claimed { opacity: .55; }
+.season-row.locked { opacity: .7; }
+.sr-tier {
+  flex: 0 0 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 900; font-size: 13px;
+  background: rgba(0,0,0,.4); border: 1px solid rgba(242,200,90,.3); color: var(--gold-1);
+}
+.sr-rewards { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.sr-free { font-size: 11.5px; color: var(--parchment); }
+.sr-pass { font-size: 11.5px; color: #52dcd2; }
+.sr-pass.locked { color: var(--muted); }
+.sr-act { flex: 0 0 auto; font-size: 14px; color: var(--muted); }
+.sr-btn { padding: 7px 14px; font-size: 11px; min-height: 0; }

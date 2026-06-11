@@ -42,10 +42,17 @@ window.PS = window.PS || {};
     if (card.rank >= 11) e.classList.add('face');
     if (scale) e.style.setProperty('--cw', scale + 'px');
     const g = card.glyph;
+    // Royal portraits (hieroglyph figures) on courts; aces get the ornate seal
+    const ROYAL = { 11: '\u{1320E}', 12: '\u{13050}', 13: '\u{1305B}' };
+    if (card.rank === 14) e.classList.add('ace');
     e.innerHTML =
       '<div class="pip-corner tl"><span class="r">' + card.label + '</span><span class="s">' + g + '</span></div>' +
-      (card.rank >= 11 ? '<div class="court"></div>' : '') +
-      '<div class="center-suit">' + g + '</div>' +
+      (card.rank >= 11 && card.rank <= 13
+        ? '<div class="court"><span class="royal">' + ROYAL[card.rank] + '</span></div>'
+        : '') +
+      (card.rank === 14
+        ? '<div class="ace-orn"><span class="ao-ring"></span><span class="ao-suit">' + g + '</span><span class="ao-ankh">\u{13099}</span></div>'
+        : '<div class="center-suit">' + g + '</div>') +
       '<div class="pip-corner br"><span class="r">' + card.label + '</span><span class="s">' + g + '</span></div>';
     // Player's per-card charm (pack cosmetic placed on this exact card)
     const charm = PS.getCardCharm && PS.getCardCharm(card);
@@ -156,15 +163,28 @@ window.PS = window.PS || {};
       fc.style.transform = 'rotate(' + (i % 2 ? 14 : -16) + 'deg)';
     });
 
-    // leaderboard
-    const lb = $('#home-lb'); lb.innerHTML = '';
-    PS.LEADERBOARD.slice().sort((a,b)=>b.score-a.score).slice(0,6).forEach(r => {
-      const row = el('div', 'lb-row');
-      row.innerHTML = '<span class="lb-ava">' + r.glyph + '</span>' +
-        '<span class="lb-name">' + r.name + '</span>' +
-        '<span class="lb-score">' + r.score.toLocaleString() + '</span>';
-      lb.appendChild(row);
-    });
+    // game modes (replaced the placeholder leaderboard)
+    const modes = $('#home-modes');
+    if (modes) {
+      modes.innerHTML = '';
+      const MODES = [
+        { g: '\u26A1', n: 'Quick Duel', s: 'You vs one god', go: () => PS.startMatch({ players: 2 }) },
+        { g: '\u{1F531}', n: 'The Triad', s: '3-seat brawl', go: () => PS.startMatch({ opponents: [{ name: 'Set', glyph: '\u{1F329}' }, { name: 'Horus', glyph: '\u{1F985}' }], slapTarget: 6, label: 'The Triad' }) },
+        { g: '\u{1F451}', n: 'The Quorum', s: '4-seat brawl', go: () => PS.startMatch({ opponents: [{ name: 'Set', glyph: '\u{1F329}' }, { name: 'Horus', glyph: '\u{1F985}' }, { name: 'Anubis', glyph: '\u{13062}' }], slapTarget: 6, label: 'The Quorum' }) },
+        { g: '\u2694', n: 'Trials', s: 'Face the gods', go: () => { if (PS.LADDER) PS.LADDER.open(); } },
+        { g: '\u{1F310}', n: 'Online', s: 'Real opponents', go: () => { if (PS.NET) PS.NET.openLobby(); } },
+        { g: '\u2699', n: 'Settings', s: 'Pace & rules', go: () => PS.showScreen('settings') },
+      ];
+      MODES.forEach((m) => {
+        const t = el('button', 'mode-tile');
+        t.innerHTML = '<span class="mg">' + m.g + '</span><span class="mn">' + m.n + '</span><span class="ms2">' + m.s + '</span>';
+        t.onclick = m.go;
+        modes.appendChild(t);
+      });
+    }
+    // season banner tier
+    const sb = $('#sb-tier');
+    if (sb && PS._seasonState) sb.textContent = 'Tier ' + PS._seasonState.tier + ' / 30 \u00B7 ' + (PS._seasonState.pass ? 'Pass active' : 'Free track');
   };
 
   /* ---- Render PROFILE ---------------------------------------------------- */

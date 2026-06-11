@@ -270,6 +270,16 @@
 #screen-auth { overflow-y: auto; }
 #auth-guest { touch-action: manipulation; min-height: 46px; }
 .auth-guest-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.made-with {
+  margin-top: auto;            /* settles to the bottom of the auth screen */
+  padding-top: 18px;
+  font-family: var(--font-head);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  color: var(--muted);
+  opacity: .75;
+  text-align: center;
+}
 
 /* ==================== UNLOCKABLE CARD BACKS =============================== */
 .card.back.scarab { background: linear-gradient(150deg, #0c3a26 0%, #14543a 55%, #0c3a26 100%); }

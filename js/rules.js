@@ -35,10 +35,10 @@ window.PS = window.PS || {};
       ruleRow('🏆', 'The goal', 'Win cards by slapping. Reach the slap target — or take every card — and the temple is yours.') },
     { title: 'Slap the Patterns', body: () =>
       '<div class="tut-glyph">🖐</div>' +
-      ruleRow('🃏🃏', 'Double', 'Two equal ranks back-to-back.') +
-      ruleRow('🃏·🃏', 'Sandwich', 'Equal ranks, one card between.') +
-      ruleRow('👑♕', 'Marriage', 'Queen & King together.') +
-      ruleRow('♕·♔', 'Divorce', 'Queen & King, one card between.') +
+      ruleRow('🃏🃏', 'Gemini', 'Twins — two equal ranks back-to-back.') +
+      ruleRow('🃏·🃏', 'Orbit', 'Equal ranks circling one card between.') +
+      ruleRow('👑♕', 'Trine', 'Queen & King aligned together.') +
+      ruleRow('♕·♔', 'Void', 'Queen & King parted by one card.') +
       ruleRow('⚡', 'Be first', 'Tap the pile or <b>SLAP</b> (or press S) — the whole pile is yours.') },
     { title: 'The Tax', body: () =>
       '<div class="tut-glyph">🗡</div>' +
@@ -58,10 +58,10 @@ window.PS = window.PS || {};
     const on = (k, dflt) => (dflt ? o[k] !== false : !!o[k]);
     let h = '';
     h += '<div class="rules-sect">Slappable piles' + (active.opts ? ' — this match' : '') + '</div>';
-    if (on('double', true))   h += ruleRow('🃏🃏', 'Double', 'Two equal ranks back-to-back (7·7).');
-    if (on('sandwich', true)) h += ruleRow('🃏·🃏', 'Sandwich', 'Equal ranks with one card between (7·K·7).');
-    if (on('marriage', true)) h += ruleRow('👑♕', 'Marriage', 'Queen & King back-to-back, either order.');
-    if (on('divorce', true))  h += ruleRow('♕·♔', 'Divorce', 'Queen & King with one card between.');
+    if (on('double', true))   h += ruleRow('🃏🃏', 'Gemini', 'Twins — two equal ranks back-to-back (7·7).');
+    if (on('sandwich', true)) h += ruleRow('🃏·🃏', 'Orbit', 'Equal ranks with one card between (7·K·7).');
+    if (on('marriage', true)) h += ruleRow('👑♕', 'Trine', 'Queen & King back-to-back, either order.');
+    if (on('divorce', true))  h += ruleRow('♕·♔', 'Void', 'Queen & King with one card between.');
     if (on('runs', false))    h += ruleRow('1·2·3', 'Sequence', 'Three ranks climbing or falling in a row.');
     if (on('topBottom', false)) h += ruleRow('⇅', 'Top & Bottom', 'Top card matches the very bottom card.');
     h += '<div class="rules-sect">The tax (face cards)</div>' +

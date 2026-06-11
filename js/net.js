@@ -129,7 +129,7 @@ window.PS = window.PS || {};
     if (!o.double && !o.sandwich && !o.marriage && !o.divorce) {
       o.double = true;
       const t = $('#hr-double'); if (t) t.classList.add('on');
-      PS.toast('A table needs at least one slap rule — Doubles enabled');
+      PS.toast('A table needs at least one slap rule — Gemini enabled');
     }
     connect(() => send({ type: 'CREATE_ROOM', playerName: myName(), settings: {
       rules: { double: o.double, sandwich: o.sandwich, marriage: o.marriage, divorce: o.divorce },
@@ -177,7 +177,7 @@ window.PS = window.PS || {};
     if (cfg) {
       if (roomSettings) {
         const r = roomSettings.rules || {};
-        const on = [r.double && 'Doubles', r.sandwich && 'Sandwiches', r.marriage && 'Marriage', r.divorce && 'Divorce'].filter(Boolean);
+        const on = [r.double && 'Gemini', r.sandwich && 'Orbits', r.marriage && 'Trines', r.divorce && 'Void'].filter(Boolean);
         cfg.textContent = (roomSettings.numDecks || 1) + ' deck' + ((roomSettings.numDecks || 1) > 1 ? 's' : '') + ' · ' + on.join(' · ');
       } else cfg.textContent = '';
     }
@@ -289,13 +289,16 @@ window.PS = window.PS || {};
     this.updateControls();
   };
 
+  // server wire names → celestial display names
+  const NET_RULE = { DOUBLE: 'Gemini', SANDWICH: 'Orbit', MARRIAGE: 'Trine', DIVORCE: 'Void' };
+  const ruleName = (r) => NET_RULE[String(r || '').toUpperCase()] || (r ? String(r).replace(/_/g, ' ') : '');
   NetMatch.prototype.onSlapValid = function (winnerId, rule) {
     this.slapWindowOpen = false; $('#pile').classList.remove('slappable');
     const w = this.seatById(winnerId);
     if (PS.VFX) PS.VFX.pileWon(!!(w && w.isHuman));
     if (PS.SFX) { if (w && w.isHuman) PS.SFX.win(); else { PS.SFX.slap(); PS.SFX.coins(4); } }
     if (w && w.isHuman) { this.slaps++; this.bumpCharge(1 / 3); this.flashSlap('win', rule); }
-    else if (w) PS.toast(w.name + ' slapped — ' + (rule || 'pile') + '!');
+    else if (w) PS.toast(w.name + ' slapped — ' + (ruleName(rule) || 'pile') + '!');
     this.refreshHUD();
   };
   NetMatch.prototype.onFalseSlap = function (playerId, penaltyCard) {
@@ -362,7 +365,7 @@ window.PS = window.PS || {};
     const hand = $('#slap-hand'), title = $('#slap-title'), sub = $('#slap-sub'), prize = $('#slap-prize');
     if (kind === 'win') {
       hand.textContent = '\u{1F590}'; title.textContent = 'YOU SLAPPED FIRST!'; title.className = 'slap-title win';
-      sub.textContent = (rule ? rule.replace(/_/g, ' ') : 'Clean slap') + '!';
+      sub.textContent = (ruleName(rule) || 'Clean slap') + '!';
       prize.hidden = false; prize.className = 'slap-prize frame'; prize.innerHTML = '<span class="gold-text">PILE WON</span>';
       if (PS.playSlapFx) PS.playSlapFx(scr);
     } else {

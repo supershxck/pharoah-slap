@@ -357,7 +357,8 @@ window.PS = window.PS || {};
   };
 
   /* ---- Collect review (docked beside the pile, never over it) ------------- */
-  const RULE_NAME = { double: 'Double', sandwich: 'Sandwich', marriage: 'Marriage', divorce: 'Divorce', run: 'Sequence', topbottom: 'Top & Bottom' };
+  // Celestial rule names: doubles=Gemini, sandwiches=Orbits, marriage=Trines, divorce=Void
+  const RULE_NAME = { double: 'Gemini', sandwich: 'Orbit', marriage: 'Trine', divorce: 'Void', run: 'Sequence', topbottom: 'Top & Bottom' };
   Match.prototype.showCollect = function (ev, winner, recentCards) {
     const veil = $('#collect-veil');
     if (!veil) return;
@@ -412,7 +413,7 @@ window.PS = window.PS || {};
       title.textContent = 'YOU SLAPPED FIRST!';
       title.className = 'slap-title win';
       const reason = (ev.reasons && ev.reasons[0]) || 'double';
-      sub.textContent = ({ double: 'Double!', sandwich: 'Sandwich!', marriage: 'Marriage — Q & K!', divorce: 'Divorce — Q ✕ K!', topbottom: 'Top & Bottom!', run: 'Run of three!' }[reason]) || 'Clean slap!';
+      sub.textContent = ({ double: 'Gemini — twins!', sandwich: 'Orbit!', marriage: 'Trine — Q & K!', divorce: 'Void — Q ✕ K!', topbottom: 'Top & Bottom!', run: 'Run of three!' }[reason]) || 'Clean slap!';
       prize.hidden = false;
       prize.className = 'slap-prize frame';
       prize.innerHTML = '<span class="gold-text">PILE WON · +' + ev.count + ' cards</span>';

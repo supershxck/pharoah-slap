@@ -108,6 +108,26 @@ window.PS = window.PS || {};
       bodyEl.appendChild(el('div', 'store-note', '\u{1F30A} Pass active — every tier pays out'));
     }
 
+    // claim-all when several tiers wait
+    const claimable = [];
+    for (let t = 1; t <= S.tiers; t++) {
+      const r = S.rewards[t] || {};
+      if ((r.free || r.pass) && t <= S.tier && !S.claimed.includes(t)) claimable.push(t);
+    }
+    if (claimable.length > 1) {
+      const all = el('button', 'btn emerald', 'Claim All (' + claimable.length + ')');
+      all.onclick = async () => {
+        all.disabled = true;
+        for (const t of claimable) {
+          try { await PS.AUTH.api('/api/season/claim', { method: 'POST', body: { tier: t } }); } catch (e) {}
+        }
+        PS.toast(claimable.length + ' tiers claimed');
+        if (PS.SFX) PS.SFX.coins(10);
+        refresh();
+      };
+      bodyEl.appendChild(all);
+    }
+
     // tier track
     const track = el('div', 'season-track');
     for (let t = 1; t <= S.tiers; t++) {

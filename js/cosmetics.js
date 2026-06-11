@@ -327,9 +327,11 @@ window.PS = window.PS || {};
     const fan = $('#pack-fan'); if (!fan) return;
     fan.innerHTML = '';
     const n = state.packs;
-    $('#pack-count').textContent = n > 0
+    const collectable = CATALOG.length;
+    $('#pack-count').textContent = (n > 0
       ? (n + ' pack' + (n > 1 ? 's' : '') + ' ready')
-      : 'Win games to earn packs — one every ' + GAMES_PER_PACK + ' games, plus level-ups';
+      : 'Win games to earn packs — one every ' + GAMES_PER_PACK + ' games, plus level-ups')
+      + ' · Collection ' + state.owned.size + '/' + collectable;
     const btn = $('#pack-claim');
     if (lastRoll) {
       // show the rolled items as a fan

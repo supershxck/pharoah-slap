@@ -173,7 +173,7 @@ window.PS = window.PS || {};
         { g: '\u{1F451}', n: 'The Quorum', s: '4-seat brawl', go: () => PS.startMatch({ opponents: [{ name: 'Set', glyph: '\u{1F329}' }, { name: 'Horus', glyph: '\u{1F985}' }, { name: 'Anubis', glyph: '\u{13062}' }], slapTarget: 6, label: 'The Quorum' }) },
         { g: '\u2694', n: 'Trials', s: 'Face the gods', go: () => { if (PS.LADDER) PS.LADDER.open(); } },
         { g: '\u{1F310}', n: 'Online', s: 'Real opponents', go: () => { if (PS.NET) PS.NET.openLobby(); } },
-        { g: '\u2699', n: 'Settings', s: 'Pace & rules', go: () => PS.showScreen('settings') },
+        { g: '\u2699', n: 'Custom', s: 'Your house rules', go: () => { if (PS.CUSTOM) PS.CUSTOM.open(); } },
       ];
       MODES.forEach((m) => {
         const t = el('button', 'mode-tile');

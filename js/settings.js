@@ -81,6 +81,28 @@ window.PS = window.PS || {};
     bodyEl.appendChild(segRow('Bot skill', 'difficulty', [
       { value: 'easy', label: 'Easy' }, { value: 'medium', label: 'Medium' }, { value: 'hard', label: 'Hard' },
     ]));
+
+    // account management (deletion is an app-store requirement)
+    if (PS.AUTH && PS.AUTH.getUser()) {
+      bodyEl.appendChild(el('div', 'coll-head', 'Account'));
+      const del = el('button', 'btn ghost danger', 'Delete My Account');
+      let armed = false;
+      del.onclick = async () => {
+        if (!armed) {
+          armed = true;
+          del.textContent = 'Tap again to erase everything — forever';
+          del.classList.add('armed');
+          setTimeout(() => { armed = false; del.textContent = 'Delete My Account'; del.classList.remove('armed'); }, 4000);
+          return;
+        }
+        try {
+          const { ok } = await PS.AUTH.api('/api/account', { method: 'DELETE' });
+          if (ok) { PS.toast('Account erased. The sands forget.'); PS.AUTH.logout(); return; }
+          PS.toast('Could not delete — try again');
+        } catch (e) { PS.toast('Network error'); }
+      };
+      bodyEl.appendChild(del);
+    }
   }
 
   PS.SETTINGS = { render };

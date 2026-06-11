@@ -798,3 +798,23 @@ html, body, .phone, .phone * { touch-action: manipulation; }
 .sr-pass.locked { color: var(--muted); }
 .sr-act { flex: 0 0 auto; font-size: 14px; color: var(--muted); }
 .sr-btn { padding: 7px 14px; font-size: 11px; min-height: 0; }
+
+/* ==================== VICTORY GAINS ======================================= */
+.gain-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 12px; border-radius: 12px; min-width: 84px;
+  background: rgba(0,0,0,.26); border: 1px solid rgba(242,200,90,.25);
+}
+.gain-tile .gg2 { font-size: 19px; }
+.gain-tile b { font-family: var(--font-display); font-weight: 900; font-size: 15px; color: var(--gold-1); }
+.gain-tile i { font-style: normal; font-size: 9px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+
+/* ==================== CUSTOM MATCH ======================================== */
+#screen-custom { padding: 22px 18px; gap: 12px; overflow-y: auto;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+#custom-body { display: flex; flex-direction: column; gap: 10px; }
+#custom-body .ho-grid { grid-template-columns: 1fr 1fr; }
+
+/* ==================== DANGER (account deletion) =========================== */
+.btn.danger { border-color: rgba(216,71,46,.5); color: var(--carnelian-2, #f06a3a); }
+.btn.danger.armed { background: rgba(216,71,46,.2); border-color: #d8472e; font-weight: 700; }

@@ -262,6 +262,23 @@ function sign(user) {
   });
 }
 
+// ─── RATE LIMITING (auth endpoints; in-memory, per-IP) ───────────────────────
+const RATE_WINDOW_MS = 10 * 60 * 1000;
+const RATE_MAX = 20;                       // attempts per window per IP
+const rateHits = new Map();                // key → [timestamps]
+function rateLimited(req, route) {
+  const ip = (req.socket && req.socket.remoteAddress) || (req.headers && req.headers["x-forwarded-for"]) || "?";
+  const key = route + "|" + ip;
+  const now = Date.now();
+  const arr = (rateHits.get(key) || []).filter((t) => now - t < RATE_WINDOW_MS);
+  arr.push(now);
+  rateHits.set(key, arr);
+  if (rateHits.size > 5000) {              // lazy prune
+    for (const [k, v] of rateHits) if (!v.length || now - v[v.length - 1] > RATE_WINDOW_MS) rateHits.delete(k);
+  }
+  return arr.length > RATE_MAX;
+}
+
 // ─── HTTP PLUMBING ───────────────────────────────────────────────────────────
 function sendJson(res, code, obj) {
   const body = JSON.stringify(obj);
@@ -321,6 +338,8 @@ async function handleApi(req, res) {
 
   // ── POST /api/register ─────────────────────────────────────────────────────
   if (url === "/api/register" && req.method === "POST") {
+    if (rateLimited(req, "register"))
+      return sendJson(res, 429, { error: "RATE_LIMITED", message: "Too many attempts — rest a while." }), true;
     const body = await readBody(req);
     if (!body) return sendJson(res, 400, { error: "BAD_JSON" }), true;
     const { username, passcode } = body;
@@ -337,6 +356,8 @@ async function handleApi(req, res) {
 
   // ── POST /api/login ────────────────────────────────────────────────────────
   if (url === "/api/login" && req.method === "POST") {
+    if (rateLimited(req, "login"))
+      return sendJson(res, 429, { error: "RATE_LIMITED", message: "Too many attempts — rest a while." }), true;
     const body = await readBody(req);
     if (!body) return sendJson(res, 400, { error: "BAD_JSON" }), true;
     const { username, passcode } = body;
@@ -433,6 +454,14 @@ async function handleApi(req, res) {
     }
 
     return sendJson(res, 200, { user: publicUser(db.getUserById(user.id)), gained }), true;
+  }
+
+  // ── DELETE /api/account — full removal (App Store requirement 5.1.1(v)) ────
+  if (url === "/api/account" && req.method === "DELETE") {
+    const user = authUser(req);
+    if (!user) return sendJson(res, 401, { error: "UNAUTHORIZED" }), true;
+    db.deleteUser(user.id);
+    return sendJson(res, 200, { deleted: true }), true;
   }
 
   // ── GET /api/store — premium catalog with ownership flags ──────────────────

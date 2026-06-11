@@ -75,6 +75,7 @@ const stmt = {
     `INSERT INTO users (username, passcode_hash) VALUES (?, ?)`,
   ),
   userByName: db.prepare(`SELECT * FROM users WHERE username = ?`),
+  deleteUser: db.prepare(`DELETE FROM users WHERE id = ?`),
   userById: db.prepare(`SELECT * FROM users WHERE id = ?`),
   setOnboarding: db.prepare(`
     UPDATE users
@@ -110,6 +111,9 @@ module.exports = {
   createUser(username, passcodeHash) {
     const info = stmt.insertUser.run(username, passcodeHash);
     return stmt.userById.get(Number(info.lastInsertRowid));
+  },
+  deleteUser(id) {
+    stmt.deleteUser.run(id);   // progress rows cascade via FK
   },
   getUserByName(username) {
     return stmt.userByName.get(username);

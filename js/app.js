@@ -28,20 +28,29 @@ window.PS = window.PS || {};
     }
     $('#vic-mode').textContent = youWon ? 'Slap Duel · Won' : 'Slap Duel · Lost';
 
-    // reward fan
+    // REAL rewards: xp earned, pack progress, season climb (same formula as
+    // the server, so the provisional numbers match what lands in the account)
     const tray = $('#vic-rewards'); tray.innerHTML = '';
-    const left = el('div', 'reward');
-    left.appendChild(PS.makeCard({ rank: 13, suit: 'spades', red: false, label: 'K', glyph: '\u2660' }, 64));
-    left.appendChild(el('div', 'rlab', 'Upgraded'));
-    const mid = el('div', 'reward center');
-    mid.appendChild(PS.makeBack(PS.tweaks.deckSkin, 88));
-    mid.appendChild(el('div', 'rlab', 'Rare · Alt Art'));
-    const right = el('div', 'reward');
-    right.appendChild(PS.makeCard({ rank: 14, suit: 'hearts', red: true, label: 'A', glyph: '\u2665' }, 64));
-    right.appendChild(el('div', 'rlab', 'Lvl Up'));
-    tray.appendChild(left); tray.appendChild(mid); tray.appendChild(right);
+    const xpGain = (youWon ? 60 : 25) + Math.min(30, (data.slaps | 0) * 2);
+    const C = PS.COSMO ? PS.COSMO.state : null;
+    const gain = (g, v, s) => {
+      const t = el('div', 'gain-tile');
+      t.innerHTML = '<span class="gg2">' + g + '</span><b>' + v + '</b><i>' + s + '</i>';
+      return t;
+    };
+    tray.appendChild(gain('⭐', '+' + xpGain + ' XP', C ? ('Level ' + C.level) : ''));
+    if (C) {
+      const g2 = ((C.games + 1) % 5);
+      tray.appendChild(gain('\u{1F381}', g2 === 0 ? 'PACK!' : 'Game ' + (g2 === 0 ? 5 : g2) + '/5', g2 === 0 ? 'earned now' : 'toward next pack'));
+    }
+    if (PS._seasonState) {
+      const S = PS._seasonState;
+      tray.appendChild(gain('\u{1F30A}', 'Tier ' + S.tier, '+' + xpGain + ' season XP'));
+    }
 
-    $('#vic-banner-word2').textContent = youWon ? 'Deck Upgrades Unlocked!' : 'Better luck next duel';
+    $('#vic-banner-word2').textContent = youWon
+      ? ('Collected ' + (data.collected || 0) + ' cards · ' + (data.slaps || 0) + ' slaps landed')
+      : 'Better luck next duel';
 
     PS.showScreen('victory');
     if (youWon) PS.confetti($('#screen-victory'), 80);

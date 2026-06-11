@@ -123,6 +123,15 @@ window.PS = window.PS || {};
     const [x, y] = pileXY();
     spawnRing(x, y, mine ? GOLD : RED, 170, 4);
     spawnSparks(x, y, 26, mine ? GOLD : RED, 240, false);
+    // the payout — coins leap from the pile and rain back down
+    const AMBER = [232, 178, 60];
+    for (let i = 0; i < (mine ? 14 : 7); i++) {
+      const a = rnd(-Math.PI * 0.8, -Math.PI * 0.2);
+      const v = rnd(140, 300);
+      push({ k: 'coin', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+        g: 520, life: rnd(0.8, 1.3), t: 0, r: rnd(2.2, 3.8),
+        col: Math.random() < 0.6 ? GOLD : AMBER });
+    }
     flash(mine ? GOLD : RED, 0.16);
     tension = Math.max(0.12, tension - 0.35);   // release, but never fully cold
   }
@@ -256,10 +265,10 @@ window.PS = window.PS || {};
       if (p.t >= p.life) { parts.splice(i, 1); continue; }
       const k = p.t / p.life, fade = 1 - k;
       const c = p.col || GOLD;
-      if (p.k === 'spark' || p.k === 'ember' || p.k === 'mote') {
+      if (p.k === 'spark' || p.k === 'ember' || p.k === 'mote' || p.k === 'coin') {
         if (p.t > 0) {
           p.x += p.vx * dt; p.y += p.vy * dt;
-          if (p.k === 'spark') p.vy += (p.g || 0) * dt;
+          if (p.k === 'spark' || p.k === 'coin') p.vy += (p.g || 0) * dt;
         }
         let a = fade;
         if (p.k === 'ember') a *= 0.5 + 0.5 * Math.sin(p.t * p.flick * TAU);

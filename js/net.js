@@ -71,13 +71,16 @@ window.PS = window.PS || {};
 
       case 'ROOM_CREATED':
         myId = m.playerId; roomId = m.roomId; isHost = true;
+        if (m.settings) roomSettings = m.settings;
         lobby = m.players || []; renderLobby(); break;
       case 'JOIN_OK':
         myId = m.playerId; roomId = m.roomId; isHost = (m.hostId === m.playerId);
+        if (m.settings) roomSettings = m.settings;
         lobby = m.players || []; renderLobby(); break;
       case 'PLAYER_JOINED':
       case 'LOBBY_UPDATE':
       case 'SETTINGS_UPDATED':
+        if (m.settings) roomSettings = m.settings;
         if (m.players) lobby = m.players; renderLobby(); break;
       case 'PLAYER_DISCONNECTED':
       case 'PLAYER_RECONNECTED':
@@ -108,9 +111,31 @@ window.PS = window.PS || {};
     const u = PS.AUTH && PS.AUTH.getUser();
     return (u && u.username) || (PS.PROFILE && PS.PROFILE.name) || 'Pharaoh';
   }
+  // Host-chosen table rules, set in the lobby create panel.
+  let hostOpts = { numDecks: 1, double: true, sandwich: true, marriage: true, divorce: true };
+  let roomSettings = null;
+  function readHostOpts() {
+    const seg = document.querySelector('#deck-seg button.sel');
+    hostOpts.numDecks = seg ? parseInt(seg.dataset.v, 10) || 1 : 1;
+    ['double', 'sandwich', 'marriage', 'divorce'].forEach((k) => {
+      const t = $('#hr-' + k);
+      if (t) hostOpts[k] = t.classList.contains('on');
+    });
+    return hostOpts;
+  }
   function createRoom() {
     pendingAction = 'create';
-    connect(() => send({ type: 'CREATE_ROOM', playerName: myName(), settings: { rules: { double: true, sandwich: true, marriage: false, divorce: false }, mode: 'none', numDecks: 1 } }));
+    const o = readHostOpts();
+    if (!o.double && !o.sandwich && !o.marriage && !o.divorce) {
+      o.double = true;
+      const t = $('#hr-double'); if (t) t.classList.add('on');
+      PS.toast('A table needs at least one slap rule — Doubles enabled');
+    }
+    connect(() => send({ type: 'CREATE_ROOM', playerName: myName(), settings: {
+      rules: { double: o.double, sandwich: o.sandwich, marriage: o.marriage, divorce: o.divorce },
+      mode: 'none',
+      numDecks: o.numDecks,
+    } }));
   }
   function joinRoom() {
     const code = ($('#net-code').value || '').toUpperCase().trim();
@@ -147,6 +172,15 @@ window.PS = window.PS || {};
     readyBtn.style.display = isHost ? 'none' : 'block';
     const allReady = lobby.length >= 2 && lobby.every((p) => p.isHost || p.ready);
     startBtn.disabled = !allReady;
+    // show the table's rules to everyone in the room
+    const cfg = $('#lobby-config');
+    if (cfg) {
+      if (roomSettings) {
+        const r = roomSettings.rules || {};
+        const on = [r.double && 'Doubles', r.sandwich && 'Sandwiches', r.marriage && 'Marriage', r.divorce && 'Divorce'].filter(Boolean);
+        cfg.textContent = (roomSettings.numDecks || 1) + ' deck' + ((roomSettings.numDecks || 1) > 1 ? 's' : '') + ' · ' + on.join(' · ');
+      } else cfg.textContent = '';
+    }
   }
 
   /* ---- countdown overlay ------------------------------------------------- */
@@ -243,6 +277,7 @@ window.PS = window.PS || {};
   NetMatch.prototype.onCardPlayed = function (card, turnIdx, fromId) {
     const mine = fromId === myId;
     if (card) this.addPileCard(conv(card), fromId);
+    if (PS.SFX) PS.SFX.card();
     if (PS.VFX) PS.VFX.cardPlayed(mine);
     if (mine) this.bumpCharge(1 / 6);
     if (turnIdx != null) { this.turn = turnIdx; this.highlightTurn(turnIdx); }
@@ -258,12 +293,14 @@ window.PS = window.PS || {};
     this.slapWindowOpen = false; $('#pile').classList.remove('slappable');
     const w = this.seatById(winnerId);
     if (PS.VFX) PS.VFX.pileWon(!!(w && w.isHuman));
+    if (PS.SFX) { if (w && w.isHuman) PS.SFX.win(); else { PS.SFX.slap(); PS.SFX.coins(4); } }
     if (w && w.isHuman) { this.slaps++; this.bumpCharge(1 / 3); this.flashSlap('win', rule); }
     else if (w) PS.toast(w.name + ' slapped — ' + (rule || 'pile') + '!');
     this.refreshHUD();
   };
   NetMatch.prototype.onFalseSlap = function (playerId, penaltyCard) {
     const p = this.seatById(playerId);
+    if (p && p.isHuman && PS.SFX) PS.SFX.bad();
     if (p && p.isHuman) this.flashSlap('block');
     else if (p) PS.toast(p.name + ' false-slapped!');
     if (penaltyCard) this.addPileCard(conv(penaltyCard), playerId, true);
@@ -283,6 +320,7 @@ window.PS = window.PS || {};
     this.matchOver = true;
     if (PS.VFX) PS.VFX.setMode(null);
     const won = m.winnerId === myId;
+    if (won && PS.SFX) PS.SFX.fanfare();
     if (PS.COSMO) PS.COSMO.recordMatch({ won, slaps: this.slaps || 0, cards: 0, falseSlaps: 0, duration: 0 });
     if (m.playerCounts) m.playerCounts.forEach(pc => { const s = this.seatById(pc.id); if (s) s.count = pc.cardCount; });
     const winner = this.seatById(m.winnerId) || { name: m.winnerName || 'Nobody', avatar: '☠' };
@@ -358,6 +396,20 @@ window.PS = window.PS || {};
     if (lab) lab.textContent = this.slapWindowOpen ? 'SLAP NOW!' : (myTurn ? 'YOUR TURN · A' : 'WAIT…');
     $('#btn-slap').classList.toggle('ready', this.slapWindowOpen);
   };
+
+  // host-options widgets (deck seg + rule switches) — wire once at load
+  (function wireHostOpts() {
+    document.querySelectorAll('#deck-seg button').forEach((b) => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('#deck-seg button').forEach((x) => x.classList.remove('sel'));
+        b.classList.add('sel');
+      });
+    });
+    ['double', 'sandwich', 'marriage', 'divorce'].forEach((k) => {
+      const t = $('#hr-' + k);
+      if (t) t.addEventListener('click', () => t.classList.toggle('on'));
+    });
+  })();
 
   PS.NET = { openLobby, createRoom, joinRoom, startGame, toggleReady, leave, isActive: () => !!(net && !net.matchOver) };
 })(window.PS);

@@ -72,6 +72,7 @@ window.PS = window.PS || {};
     bodyEl.appendChild(grid);
 
     bodyEl.appendChild(el('div', 'coll-head', 'Gameplay'));
+    bodyEl.appendChild(toggleRow('Sound', 'Card flips, slap thumps, coin payouts', 'sound'));
     bodyEl.appendChild(toggleRow('Expert Mode', 'Simplified table, no pile glow — read the cards yourself', 'expertUI'));
     bodyEl.appendChild(segRow('Game speed', 'gameSpeed', [
       { value: 'chill', label: 'Chill' }, { value: 'normal', label: 'Normal' },

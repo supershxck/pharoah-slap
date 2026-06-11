@@ -46,6 +46,7 @@ window.PS = window.PS || {};
     this.matchOver = false;
     this.pileEls = [];
     this.slapTarget = opts.slapTarget || 8;
+    this._recent = [];   // last few pile cards, for the collect review
     // Expert: hides slap cues — forced by Ra, or chosen in Settings.
     this.expert = !!opts.expert || !!(PS.tweaks && PS.tweaks.expertUI);
     this.onEnd = typeof opts.onEnd === 'function' ? opts.onEnd : null;
@@ -160,12 +161,16 @@ window.PS = window.PS || {};
         break;
       case 'play':
         this.addPileCard(ev.card, ev.player);
+        this._recent.push(ev.card);
+        if (this._recent.length > 6) this._recent.shift();
         this.refreshHUD();
+        if (PS.SFX) PS.SFX.card();
         if (PS.VFX) PS.VFX.cardPlayed(ev.player === this.human);
         if (ev.player === this.human) this.bumpCharge(1 / 6);
         break;
       case 'faceChallenge':
         this.showTribute(ev.owed, ev.card);
+        if (PS.SFX) PS.SFX.tribute();
         if (PS.VFX) PS.VFX.faceChallenge();
         break;
       case 'tribute':
@@ -177,7 +182,10 @@ window.PS = window.PS || {};
         break;
       case 'slap':
         this.refreshHUD();
-        if (PS.VFX && !ev.valid && ev.player === this.human) PS.VFX.falseSlap();
+        if (!ev.valid && ev.player === this.human) {
+          if (PS.SFX) PS.SFX.bad();
+          if (PS.VFX) PS.VFX.falseSlap();
+        }
         break;
       case 'burn':
         if (ev.player !== this.human) {
@@ -227,6 +235,7 @@ window.PS = window.PS || {};
     // Charged play: the meter is full — this card lands with a special effect.
     if (this.charge >= 1) {
       if (PS.VFX) PS.VFX.special(PS.equippedPlay || 'basic');
+      if (PS.SFX) PS.SFX.boom();
       this.charge = 0;
       this.renderCharge();
     }
@@ -237,6 +246,7 @@ window.PS = window.PS || {};
   Match.prototype.bumpCharge = function (x) {
     if (this.charge >= 1) return;
     this.charge = Math.min(1, this.charge + x);
+    if (this.charge >= 1 && PS.SFX) PS.SFX.charge();
     this.renderCharge();
   };
   Match.prototype.renderCharge = function () {
@@ -303,9 +313,15 @@ window.PS = window.PS || {};
     $('#tribute').hidden = true;
 
     const winner = this.engine.players[ev.winner];
+    const recent = this._recent.slice(-5);
+    this._recent = [];
     this.sweepPile(ev.winner);
     this.refreshHUD();
     if (PS.VFX) PS.VFX.pileWon(ev.winner === this.human);
+    if (PS.SFX) {
+      if (ev.winner === this.human) PS.SFX.win(ev.count >= 10);
+      else { PS.SFX.slap(); PS.SFX.coins(4); }
+    }
     if (ev.winner === this.human) this.bumpCharge(1 / 3);
 
     // match win by slaps target
@@ -317,9 +333,37 @@ window.PS = window.PS || {};
 
     if (ev.reason === 'slap' && ev.winner === this.human) {
       this.flashSlap('win', ev);
-    } else if (ev.reason === 'slap') {
-      PS.toast(winner.name + ' grabbed ' + ev.count + ' cards!');
+    } else if (!this.matchOver) {
+      // v4's review moment, reborn: pause, show who took what and why.
+      this.showCollect(ev, winner, recent);
     }
+  };
+
+  /* ---- Collect review (the pause between rounds) -------------------------- */
+  Match.prototype.showCollect = function (ev, winner, recentCards) {
+    const veil = $('#collect-veil');
+    if (!veil) return;
+    this.paused = true;
+    this.clearTurnTimers();
+    const mine = ev.winner === this.human;
+    const why = ev.reason === 'challenge' ? 'Tribute paid' : 'Slapped first';
+    $('#collect-title').textContent = (mine ? 'YOU TAKE ' : winner.name.toUpperCase() + ' TAKES ') + ev.count;
+    $('#collect-title').className = mine ? 'win' : 'loss';
+    $('#collect-sub').textContent = why + ' · ' + winner.hand.length + ' cards held';
+    const tray = $('#collect-cards'); tray.innerHTML = '';
+    recentCards.forEach((c) => tray.appendChild(PS.makeCard(c, 44)));
+    veil.classList.add('show');
+    const done = () => {
+      clearTimeout(this._collectT);
+      veil.classList.remove('show');
+      veil.onclick = null;
+      if (this.matchOver) return;
+      this.paused = false;
+      this.scheduleTurn(this.engine.state.turn);
+    };
+    veil.onclick = done;
+    clearTimeout(this._collectT);
+    this._collectT = setTimeout(done, 2100);
   };
 
   /* ---- Slap moment overlay ---------------------------------------------- */
@@ -370,6 +414,7 @@ window.PS = window.PS || {};
     const won = winnerIdx === this.human;
     const duration = this._t0 ? Math.round((Date.now() - this._t0) / 1000) : 0;
     // Progression hook (ladder records stars, reveals title, etc.)
+    if (PS.SFX && won) PS.SFX.fanfare();
     if (this.onEnd) {
       try {
         this.onEnd(won, {
@@ -482,7 +527,7 @@ window.PS = window.PS || {};
   /* ---- cleanup ----------------------------------------------------------- */
   Match.prototype.clearTurnTimers = function () { this.timers.forEach(t => clearTimeout(t)); this.timers.clear(); };
   Match.prototype.clearBotSlapTimers = function () { this.botSlapTimers.forEach(t => clearTimeout(t)); this.botSlapTimers.clear(); };
-  Match.prototype.clearAll = function () { this.clearTurnTimers(); this.clearBotSlapTimers(); clearTimeout(this.windowTimer); clearInterval(this._clock); };
+  Match.prototype.clearAll = function () { this.clearTurnTimers(); this.clearBotSlapTimers(); clearTimeout(this.windowTimer); clearInterval(this._clock); clearTimeout(this._collectT); const cv = $('#collect-veil'); if (cv) cv.classList.remove('show'); };
   Match.prototype.destroy = function () { this.matchOver = true; this.paused = true; this.clearAll(); };
 
   PS.highlightTurn = () => {};

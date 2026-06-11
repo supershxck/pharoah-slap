@@ -93,6 +93,20 @@
 
       <div id="lobby-entry">
         <input class="auth-input" id="net-server" type="text" placeholder="Server (blank = this server)">
+        <div class="host-opts frame">
+          <div class="ho-title">Your Table, Your Rules</div>
+          <div class="ho-row"><span>Decks</span>
+            <div class="set-seg" id="deck-seg">
+              <button data-v="1" class="sel">1</button><button data-v="2">2</button><button data-v="3">3</button>
+            </div>
+          </div>
+          <div class="ho-grid">
+            <button class="ho-rule on" id="hr-double">Doubles</button>
+            <button class="ho-rule on" id="hr-sandwich">Sandwiches</button>
+            <button class="ho-rule on" id="hr-marriage">Marriage</button>
+            <button class="ho-rule on" id="hr-divorce">Divorce</button>
+          </div>
+        </div>
         <button class="btn lapis" id="net-create">Create Room</button>
         <div class="lobby-or">— or join —</div>
         <input class="auth-input" id="net-code" type="text" placeholder="Room code (e.g. ABCD)" maxlength="6" style="text-transform:uppercase">
@@ -101,6 +115,7 @@
 
       <div id="lobby-room">
         <div class="lobby-code-wrap"><div class="lobby-code-lab">Room Code</div><div id="lobby-code">----</div></div>
+        <div id="lobby-config"></div>
         <div id="lobby-players"></div>
         <button class="btn fire" id="lobby-start">Start Game</button>
         <button class="btn emerald" id="lobby-ready">I'm Ready</button>
@@ -219,6 +234,16 @@
       </div>
 
       <div class="myhand" id="myhand"></div>
+
+      <!-- collect review: who took the pile, with the cards that ended it -->
+      <div id="collect-veil">
+        <div class="collect-card">
+          <div id="collect-title" class="win">YOU TAKE 7</div>
+          <div id="collect-sub"></div>
+          <div id="collect-cards"></div>
+          <div class="collect-hint">tap to continue</div>
+        </div>
+      </div>
     </div>
 
     <!-- ============================ SLAP MOMENT ====================== -->
@@ -314,6 +339,7 @@
 
 <script src="js/engine.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/sound.js"></script>
 <script src="js/vfx.js"></script>
 <script src="js/match.js"></script>
 <script src="js/tweaks.js"></script>

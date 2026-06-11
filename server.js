@@ -166,6 +166,14 @@ class Room {
       numDecks: 1,
       ...settings,
     };
+    // sanitize host-supplied values
+    this.settings.numDecks = Math.max(1, Math.min(3, parseInt(this.settings.numDecks, 10) || 1));
+    const r = this.settings.rules || {};
+    this.settings.rules = {
+      double: !!r.double, sandwich: !!r.sandwich,
+      marriage: !!r.marriage, divorce: !!r.divorce,
+    };
+    if (!Object.values(this.settings.rules).some(Boolean)) this.settings.rules.double = true;
     // players: { id, name, deck, ws, clockOffset, connected }
     this.players = [];
     this.phase = "lobby"; // "lobby" | "playing" | "over"

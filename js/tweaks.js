@@ -12,7 +12,8 @@ window.PS = window.PS || {};
     "gameSpeed": "normal",
     "difficulty": "medium",
     "tableTheme": "green",
-    "expertUI": false
+    "expertUI": false,
+    "sound": true
   }/*EDITMODE-END*/;
 
   // Player-facing settings persist locally (separate from any account data).
@@ -22,8 +23,8 @@ window.PS = window.PS || {};
   }
   function persist() {
     try {
-      const { tableTheme, expertUI, gameSpeed, difficulty, deckSkin, theme } = PS.tweaks;
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ tableTheme, expertUI, gameSpeed, difficulty, deckSkin, theme }));
+      const { tableTheme, expertUI, gameSpeed, difficulty, deckSkin, theme, sound } = PS.tweaks;
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ tableTheme, expertUI, gameSpeed, difficulty, deckSkin, theme, sound }));
     } catch {}
   }
   PS.persistTweaks = persist;

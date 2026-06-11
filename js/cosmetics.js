@@ -103,6 +103,7 @@ window.PS = window.PS || {};
 
   // ---- Match results -------------------------------------------------------
   async function recordMatch(r) {
+    if (PS.STATS) PS.STATS.record(r);   // local match log for the stats screen
     const xp = (r.won ? 60 : 25) + Math.min(30, (r.slaps | 0) * 2);
     if (isUser()) {
       try {

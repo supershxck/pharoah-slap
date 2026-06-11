@@ -6,16 +6,18 @@ window.PS = window.PS || {};
   'use strict';
   const { el, $ } = PS;
 
+  // Paced for human hands: generous slap windows, bots that hesitate and miss
+  // like people do. Hard is still sharp; normal is a fair fight.
   const SPEED = {
-    chill:  { turn: 1150, window: 1550 },
-    normal: { turn: 820,  window: 1150 },
-    fast:   { turn: 560,  window: 840  },
-    blitz:  { turn: 380,  window: 600  },
+    chill:  { turn: 1150, window: 1900 },
+    normal: { turn: 850,  window: 1450 },
+    fast:   { turn: 580,  window: 980  },
+    blitz:  { turn: 400,  window: 680  },
   };
   const DIFF = {
-    easy:   { react: [640, 1180], miss: 0.42, falseSlap: 0.010 },
-    medium: { react: [410, 800],  miss: 0.24, falseSlap: 0.022 },
-    hard:   { react: [250, 520],  miss: 0.10, falseSlap: 0.040 },
+    easy:   { react: [820, 1500], miss: 0.55, falseSlap: 0.010 },
+    medium: { react: [560, 1080], miss: 0.38, falseSlap: 0.020 },
+    hard:   { react: [330, 650],  miss: 0.16, falseSlap: 0.035 },
   };
   const rint = (a, b) => a + Math.random() * (b - a);
 
@@ -178,10 +180,12 @@ window.PS = window.PS || {};
         break;
       case 'slapOpen':
         this.openSlapWindow(ev.reasons);
+        this._windowReasons = ev.reasons;
         if (PS.VFX) PS.VFX.slapOpen();
         break;
       case 'slap':
         this.refreshHUD();
+        if (ev.valid) this._lastSlap = { reasons: ev.reasons, ids: this.patternIds(ev.reasons) };
         if (!ev.valid && ev.player === this.human) {
           if (PS.SFX) PS.SFX.bad();
           if (PS.VFX) PS.VFX.falseSlap();
@@ -285,9 +289,21 @@ window.PS = window.PS || {};
     this.slapWindowOpen = false;
     $('#pile').classList.remove('slappable');
     this.clearBotSlapTimers();
+    // the window expired unclaimed — remember the missed chance for the review
+    if (this._windowReasons && this._windowReasons.length) {
+      this._missed = { reasons: this._windowReasons, ids: this.patternIds(this._windowReasons) };
+    }
+    this._windowReasons = null;
     if (this.matchOver || this.paused) return;
     // the moment passed unslapped — resume play
     this.scheduleTurn(this.engine.state.turn);
+  };
+
+  // Which of the recent pile cards formed this pattern? (for review highlights)
+  Match.prototype.patternIds = function (reasons) {
+    const r = (reasons && reasons[0]) || 'double';
+    const span = { double: 2, marriage: 2, sandwich: 3, divorce: 3, run: 3, topbottom: 1 }[r] || 2;
+    return new Set(this._recent.slice(-span).map((c) => c.id));
   };
 
   Match.prototype.humanSlap = function () {
@@ -332,6 +348,7 @@ window.PS = window.PS || {};
     }
 
     if (ev.reason === 'slap' && ev.winner === this.human) {
+      this._missed = null; this._lastSlap = null;   // review state resets per pile
       this.flashSlap('win', ev);
     } else if (!this.matchOver) {
       // v4's review moment, reborn: pause, show who took what and why.
@@ -339,31 +356,49 @@ window.PS = window.PS || {};
     }
   };
 
-  /* ---- Collect review (the pause between rounds) -------------------------- */
+  /* ---- Collect review (docked beside the pile, never over it) ------------- */
+  const RULE_NAME = { double: 'Double', sandwich: 'Sandwich', marriage: 'Marriage', divorce: 'Divorce', run: 'Sequence', topbottom: 'Top & Bottom' };
   Match.prototype.showCollect = function (ev, winner, recentCards) {
     const veil = $('#collect-veil');
     if (!veil) return;
     this.paused = true;
     this.clearTurnTimers();
     const mine = ev.winner === this.human;
-    const why = ev.reason === 'challenge' ? 'Tribute paid' : 'Slapped first';
+    let why, hl = new Set();
+    if (ev.reason === 'slap') {
+      const rule = this._lastSlap && RULE_NAME[(this._lastSlap.reasons || [])[0]];
+      why = (rule || 'Slap') + '!';
+      if (this._lastSlap) hl = this._lastSlap.ids;
+    } else if (this._missed) {
+      const rule = RULE_NAME[(this._missed.reasons || [])[0]] || 'Slap';
+      why = 'Missed — ' + rule + ' went unslapped';
+      hl = this._missed.ids;
+    } else {
+      why = 'Tribute paid';
+    }
+    this._lastSlap = null; this._missed = null;
     $('#collect-title').textContent = (mine ? 'YOU TAKE ' : winner.name.toUpperCase() + ' TAKES ') + ev.count;
     $('#collect-title').className = mine ? 'win' : 'loss';
-    $('#collect-sub').textContent = why + ' · ' + winner.hand.length + ' cards held';
+    $('#collect-sub').textContent = why;
+    $('#collect-sub').classList.toggle('missed', why.indexOf('Missed') === 0);
     const tray = $('#collect-cards'); tray.innerHTML = '';
-    recentCards.forEach((c) => tray.appendChild(PS.makeCard(c, 44)));
+    recentCards.forEach((c) => {
+      const card = PS.makeCard(c, 38);
+      if (hl.has(c.id)) card.classList.add('hl');
+      tray.appendChild(card);
+    });
     veil.classList.add('show');
     const done = () => {
       clearTimeout(this._collectT);
       veil.classList.remove('show');
-      veil.onclick = null;
       if (this.matchOver) return;
       this.paused = false;
       this.scheduleTurn(this.engine.state.turn);
     };
-    veil.onclick = done;
+    const card = veil.querySelector('.collect-card');
+    if (card) card.onclick = done;
     clearTimeout(this._collectT);
-    this._collectT = setTimeout(done, 2100);
+    this._collectT = setTimeout(done, 2300);
   };
 
   /* ---- Slap moment overlay ---------------------------------------------- */

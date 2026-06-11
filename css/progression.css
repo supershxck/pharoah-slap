@@ -541,8 +541,7 @@
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 13px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
+  letter-spacing: .08em;
   padding: 7px 14px;
   border-radius: 999px;
   border: 1px solid rgba(242,200,90,.4);
@@ -588,6 +587,50 @@
 .stat-acc { display: flex; align-items: center; gap: 18px; }
 .stat-acc-txt { font-size: 13px; color: var(--parchment); line-height: 1.7; font-family: var(--font-head); }
 .stat-empty { font-size: 12px; color: var(--muted); padding: 12px; }
+
+/* ==================== CARD CHARMS (per-card cosmetics) ==================== */
+.card .charm-mark {
+  position: absolute; top: 2px; right: 3px;
+  font-size: calc(var(--cw, 120px) * 0.16);
+  line-height: 1; pointer-events: none; z-index: 3;
+  filter: drop-shadow(0 0 4px rgba(246,207,107,.7));
+}
+.card.charm-gild {
+  box-shadow: inset 0 0 0 2px rgba(246,207,107,.75), 0 0 10px rgba(246,207,107,.45);
+  background-image: linear-gradient(135deg, rgba(246,207,107,.16) 0%, transparent 45%, rgba(246,207,107,.12) 100%);
+}
+.card.charm-eye .charm-mark { color: var(--gold-2, #e2ab3c); filter: drop-shadow(0 0 5px rgba(47,99,214,.8)); }
+.card.charm-aten {
+  box-shadow: inset 0 0 0 1px rgba(255,233,168,.6), 0 0 14px rgba(255,200,80,.65);
+}
+.card.charm-aten .charm-mark { color: #ffd768; }
+.card.charm-scarab .charm-mark, .card.charm-lotus .charm-mark { filter: none; }
+
+/* ==================== THE CARD FORGE ====================================== */
+#forge-veil {
+  position: absolute; inset: 0; z-index: 70;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(6, 8, 20, .8); backdrop-filter: blur(3px);
+  padding: 18px 12px;
+}
+#forge-veil.show { display: flex; }
+.forge-card {
+  position: relative; width: 100%; max-width: 340px; max-height: 88%;
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border: 1px solid rgba(242,200,90,.3); border-radius: var(--frame-radius);
+  padding: 14px 12px;
+}
+.forge-card h3 { margin: 0; font-size: 15px; text-align: center; }
+#forge-sub { font-size: 10.5px; color: var(--muted); font-family: var(--font-head); letter-spacing: .06em; text-align: center; }
+#forge-grid {
+  display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
+  overflow-y: auto; padding: 4px 2px;
+}
+#forge-grid .card { cursor: pointer; transition: transform .12s; }
+#forge-grid .card:active { transform: scale(.92); }
+#forge-grid .card.forge-on { outline: 2px solid var(--gold-1); box-shadow: 0 0 10px var(--accent-glow); }
+#forge-grid .card.forge-other { opacity: .55; }
 
 /* No double-tap zoom anywhere in the game */
 html, body, .phone, .phone * { touch-action: manipulation; }

@@ -10,6 +10,29 @@ window.PS = window.PS || {};
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   PS.$ = $; PS.$$ = $$; PS.el = el;
 
+  // Slap-rule vocabulary — each rule answers to several names; calls cycle
+  // through them so the table keeps its mystique. First name = primary.
+  const RULE_NAMES = {
+    double:    ['Twins', 'Gemini'],
+    sandwich:  ['Orbit', '180'],
+    marriage:  ['Trine', 'Luminaries'],
+    divorce:   ['Void', 'Squared'],
+    run:       ['Sequence'],
+    topbottom: ['Top & Bottom'],
+  };
+  const ruleCycle = {};
+  PS.RULE_NAMES = RULE_NAMES;
+  PS.ruleName = function (key) {
+    const names = RULE_NAMES[key];
+    if (!names) return key || '';
+    ruleCycle[key] = ((ruleCycle[key] || 0) + 1) % names.length;
+    return names[ruleCycle[key]];
+  };
+  PS.ruleLabel = function (key) {       // static form for menus & rule lists
+    const names = RULE_NAMES[key];
+    return names ? names.join(' · ') : key || '';
+  };
+
   const ANKH = '\u{13099}';        // hieroglyph used as card seal
   PS.GLYPHS = ['\u{13000}', '\u{1304E}', '\u{13080}', '\u{1308C}', '\u{130C0}', '\u{1310C}', '\u{13171}', '\u{131CB}', '\u{13088}', '\u{13045}'];
 
@@ -24,6 +47,12 @@ window.PS = window.PS || {};
       (card.rank >= 11 ? '<div class="court"></div>' : '') +
       '<div class="center-suit">' + g + '</div>' +
       '<div class="pip-corner br"><span class="r">' + card.label + '</span><span class="s">' + g + '</span></div>';
+    // Player's per-card charm (pack cosmetic placed on this exact card)
+    const charm = PS.getCardCharm && PS.getCardCharm(card);
+    if (charm) {
+      e.classList.add('charm-' + charm.value);
+      e.appendChild(el('div', 'charm-mark', charm.glyph || ''));
+    }
     return e;
   };
 

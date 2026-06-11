@@ -30,6 +30,11 @@ window.PS = window.PS || {};
     { id: 'play_storm',   kind: 'play', value: 'storm',   name: 'Storm of Set',  rarity: 'epic',    weight: 4,  glyph: '\u{26C8}' },
     { id: 'table_gold',   kind: 'table', value: 'gold',   name: 'Gilded Hall',   rarity: 'rare',    weight: 10, glyph: '\u{1F3DB}' },
     { id: 'table_duatbg', kind: 'table', value: 'duatbg', name: 'Duat Void',     rarity: 'epic',    weight: 5,  glyph: '\u{1F30C}' },
+    { id: 'charm_scarab', kind: 'charm', value: 'scarab', name: 'Scarab Seal',   rarity: 'common',  weight: 18, glyph: '\u{1FAB2}' },
+    { id: 'charm_lotus',  kind: 'charm', value: 'lotus',  name: 'Lotus Bloom',   rarity: 'common',  weight: 18, glyph: '\u{1FAB7}' },
+    { id: 'charm_gild',   kind: 'charm', value: 'gild',   name: 'Gold Leaf',     rarity: 'rare',    weight: 10, glyph: '✨' },
+    { id: 'charm_eye',    kind: 'charm', value: 'eye',    name: 'Eye of Horus',  rarity: 'rare',    weight: 10, glyph: '\u{13080}' },
+    { id: 'charm_aten',   kind: 'charm', value: 'aten',   name: "Aten's Halo",   rarity: 'epic',    weight: 5,  glyph: '☀' },
   ];
   const BY_ID = Object.fromEntries(CATALOG.map(c => [c.id, c]));
   const STARTERS = CATALOG.filter(c => c.rarity === 'starter').map(c => c.id);
@@ -113,8 +118,9 @@ window.PS = window.PS || {};
           syncFromUser(data.user);
           if (data.gained && data.gained.packs > 0) PS.toast('\u{1F381} Pack earned! Open it from your profile');
           else if (data.gained && data.gained.leveledUp) PS.toast('⭐ Level ' + state.level + '!');
+          return;
         }
-        return;
+        // non-OK (e.g. older server without /api/match) → keep playing locally
       } catch (e) { /* offline — fall through to local */ }
     }
     const before = state.level;
@@ -142,6 +148,13 @@ window.PS = window.PS || {};
     }
     return items;
   }
+  function openLocal() {
+    const items = rollLocal();
+    state.packs--;
+    state.xp += items.filter(i => i.duplicate).reduce((s, i) => s + i.xp, 0);
+    recalc(); saveGuest();
+    return items;
+  }
   async function openPack() {
     if (state.packs < 1) return null;
     if (isUser()) {
@@ -151,15 +164,76 @@ window.PS = window.PS || {};
           if (data.user) { PS.AUTH.setUserData(data.user); syncFromUser(data.user); }
           return data.items || [];
         }
-        return null;
-      } catch (e) { return null; }
+        // older server / route missing → open locally so the player isn't stuck
+        return openLocal();
+      } catch (e) { return openLocal(); }
     }
-    const items = rollLocal();
-    state.packs--;
-    state.xp += items.filter(i => i.duplicate).reduce((s, i) => s + i.xp, 0);
-    recalc(); saveGuest();
-    return items;
+    return openLocal();
   }
+
+  /* ---- Card charms: cosmetics placed on individual cards ------------------- */
+  const cardKey = (c) => c.rank + '-' + c.suit;
+  // Render hook: ui.js makeCard consults this for every card it draws.
+  PS.getCardCharm = function (card) {
+    const mods = state.equipped.cards;
+    if (!mods || !card || card.rank == null || !card.suit) return null;
+    const id = mods[cardKey(card)];
+    return id ? BY_ID[id] || null : null;
+  };
+  async function setCardCharm(key, charmId) {
+    if (charmId && !state.owned.has(charmId)) return;
+    if (isUser()) {
+      try {
+        const body = { cards: {} }; body.cards[key] = charmId || null;
+        const { ok, data } = await PS.AUTH.api('/api/equip', { method: 'POST', body });
+        if (ok && data.user) { PS.AUTH.setUserData(data.user); syncFromUser(data.user); renderForge(); return; }
+      } catch (e) { /* fall through to local */ }
+    }
+    state.equipped.cards = state.equipped.cards || {};
+    if (charmId) state.equipped.cards[key] = charmId; else delete state.equipped.cards[key];
+    saveGuest(); renderForge();
+  }
+
+  /* ---- The Card Forge (pick a card, place the charm) ------------------------ */
+  const SUIT_G = { spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣' };
+  const RLAB = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
+  let forgeCharm = null;
+  function openForge(charm) {
+    forgeCharm = charm;
+    const veil = $('#forge-veil'); if (!veil) return;
+    $('#forge-title').textContent = 'Place ' + charm.name;
+    renderForge();
+    veil.classList.add('show');
+  }
+  function closeForge() {
+    const veil = $('#forge-veil'); if (veil) veil.classList.remove('show');
+    forgeCharm = null;
+    renderPackScreen();   // refresh charm tile counts
+  }
+  function renderForge() {
+    const grid = $('#forge-grid'); if (!grid || !forgeCharm) return;
+    grid.innerHTML = '';
+    const mods = state.equipped.cards || {};
+    ['spades', 'hearts', 'diamonds', 'clubs'].forEach((suit) => {
+      for (let rank = 2; rank <= 14; rank++) {
+        const card = { rank, suit, red: suit === 'hearts' || suit === 'diamonds', label: RLAB[rank] || String(rank), glyph: SUIT_G[suit] };
+        const c = PS.makeCard(card, 34);
+        const key = cardKey(card);
+        const cur = mods[key];
+        if (cur === forgeCharm.id) c.classList.add('forge-on');
+        else if (cur) c.classList.add('forge-other');
+        c.onclick = () => setCardCharm(key, cur === forgeCharm.id ? null : forgeCharm.id);
+        grid.appendChild(c);
+      }
+    });
+    const n = Object.values(mods).filter((v) => v === forgeCharm.id).length;
+    $('#forge-sub').textContent = n ? (n + ' card' + (n > 1 ? 's' : '') + ' bear this charm — tap to add or remove') : 'Tap any card to place the charm';
+  }
+  (function wireForge() {
+    const x = $('#forge-close'); if (x) x.addEventListener('click', closeForge);
+    const veil = $('#forge-veil');
+    if (veil) veil.addEventListener('click', (e) => { if (e.target === veil) closeForge(); });
+  })();
 
   async function equip(kind, id) {
     if (id && !state.owned.has(id)) return;
@@ -209,6 +283,15 @@ window.PS = window.PS || {};
   // ---- Pack screen ---------------------------------------------------------
   function itemTile(c) {
     const owned = state.owned.has(c.id);
+    if (c.kind === 'charm') {
+      const placed = Object.values(state.equipped.cards || {}).filter((v) => v === c.id).length;
+      const t = el('div', 'citem ' + c.rarity + (owned ? '' : ' locked') + (placed ? ' equipped' : ''));
+      t.appendChild(el('div', 'fx-tile', c.glyph));
+      t.appendChild(el('div', 'cname', c.name));
+      t.appendChild(el('div', 'crar', placed ? ('on ' + placed + ' card' + (placed > 1 ? 's' : '')) : owned ? 'tap to place' : c.rarity));
+      if (owned) t.onclick = () => openForge(c);
+      return t;
+    }
     const eq = state.equipped[c.kind] === c.id;
     const t = el('div', 'citem ' + c.rarity + (owned ? '' : ' locked') + (eq ? ' equipped' : ''));
     if (c.kind === 'skin') t.appendChild(PS.makeBack(c.value, 52));
@@ -247,6 +330,8 @@ window.PS = window.PS || {};
       for (let i = 0; i < 3; i++) fan.appendChild(PS.makeBack(PS.tweaks.deckSkin, 92));
       btn.textContent = n > 0 ? ('Open Pack (' + n + ')') : 'No Packs Yet';
       btn.disabled = n < 1;
+      fan.style.cursor = n > 0 ? 'pointer' : 'default';
+      fan.onclick = n > 0 ? onPackButton : null;   // tapping the pack opens it too
     }
     // collection
     let grid = $('#collection');
@@ -268,15 +353,21 @@ window.PS = window.PS || {};
       const tables = el('div', 'coll-grid');
       CATALOG.filter(c => c.kind === 'table').forEach(c => tables.appendChild(itemTile(c)));
       grid.appendChild(tables);
+      grid.appendChild(el('div', 'coll-head', 'Card Charms — adorn single cards'));
+      const charms = el('div', 'coll-grid');
+      CATALOG.filter(c => c.kind === 'charm').forEach(c => charms.appendChild(itemTile(c)));
+      grid.appendChild(charms);
     }
   }
 
   async function onPackButton() {
     if (lastRoll) { lastRoll = null; renderPackScreen(); return; } // claim → reset
+    if (state.packs < 1) { PS.toast('No packs yet — every 5th game drops one'); return; }
     const items = await openPack();
     if (!items) { PS.toast('Could not open the pack'); return; }
     lastRoll = items;
     renderPackScreen();
+    if (PS.SFX) { PS.SFX.coins(9); }
     const scr = $('#screen-pack'); if (scr && PS.confetti) PS.confetti(scr, 50);
   }
 

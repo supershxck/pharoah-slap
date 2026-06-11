@@ -289,9 +289,13 @@ window.PS = window.PS || {};
     this.updateControls();
   };
 
-  // server wire names → celestial display names
-  const NET_RULE = { DOUBLE: 'Gemini', SANDWICH: 'Orbit', MARRIAGE: 'Trine', DIVORCE: 'Void' };
-  const ruleName = (r) => NET_RULE[String(r || '').toUpperCase()] || (r ? String(r).replace(/_/g, ' ') : '');
+  // server wire names → rule keys → cycling display names
+  const NET_RULE = { DOUBLE: 'double', SANDWICH: 'sandwich', MARRIAGE: 'marriage', DIVORCE: 'divorce' };
+  const ruleName = (r) => {
+    const key = NET_RULE[String(r || '').toUpperCase()];
+    if (key && PS.ruleName) return PS.ruleName(key);
+    return r ? String(r).replace(/_/g, ' ') : '';
+  };
   NetMatch.prototype.onSlapValid = function (winnerId, rule) {
     this.slapWindowOpen = false; $('#pile').classList.remove('slappable');
     const w = this.seatById(winnerId);

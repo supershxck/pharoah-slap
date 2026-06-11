@@ -357,8 +357,8 @@ window.PS = window.PS || {};
   };
 
   /* ---- Collect review (docked beside the pile, never over it) ------------- */
-  // Celestial rule names: doubles=Gemini, sandwiches=Orbits, marriage=Trines, divorce=Void
-  const RULE_NAME = { double: 'Gemini', sandwich: 'Orbit', marriage: 'Trine', divorce: 'Void', run: 'Sequence', topbottom: 'Top & Bottom' };
+  // Rule names cycle through their aliases via PS.ruleName (Twins/Gemini, …)
+  const RULE_NAME = (k) => (PS.ruleName ? PS.ruleName(k) : k);
   Match.prototype.showCollect = function (ev, winner, recentCards) {
     const veil = $('#collect-veil');
     if (!veil) return;
@@ -367,11 +367,11 @@ window.PS = window.PS || {};
     const mine = ev.winner === this.human;
     let why, hl = new Set();
     if (ev.reason === 'slap') {
-      const rule = this._lastSlap && RULE_NAME[(this._lastSlap.reasons || [])[0]];
+      const rule = this._lastSlap && RULE_NAME((this._lastSlap.reasons || [])[0]);
       why = (rule || 'Slap') + '!';
       if (this._lastSlap) hl = this._lastSlap.ids;
     } else if (this._missed) {
-      const rule = RULE_NAME[(this._missed.reasons || [])[0]] || 'Slap';
+      const rule = RULE_NAME((this._missed.reasons || [])[0]) || 'Slap';
       why = 'Missed — ' + rule + ' went unslapped';
       hl = this._missed.ids;
     } else {
@@ -413,7 +413,7 @@ window.PS = window.PS || {};
       title.textContent = 'YOU SLAPPED FIRST!';
       title.className = 'slap-title win';
       const reason = (ev.reasons && ev.reasons[0]) || 'double';
-      sub.textContent = ({ double: 'Gemini — twins!', sandwich: 'Orbit!', marriage: 'Trine — Q & K!', divorce: 'Void — Q ✕ K!', topbottom: 'Top & Bottom!', run: 'Run of three!' }[reason]) || 'Clean slap!';
+      sub.textContent = (PS.ruleName ? PS.ruleName(reason) : reason) + '!';
       prize.hidden = false;
       prize.className = 'slap-prize frame';
       prize.innerHTML = '<span class="gold-text">PILE WON · +' + ev.count + ' cards</span>';

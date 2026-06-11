@@ -51,7 +51,14 @@ const CATALOG = [
   // Table backgrounds: green/red/blue are free in Settings; these drop in packs.
   { id: "table_gold",   kind: "table", value: "gold",   name: "Gilded Hall",   rarity: "rare",    weight: 10 },
   { id: "table_duatbg", kind: "table", value: "duatbg", name: "Duat Void",     rarity: "epic",    weight: 5 },
+  // Card charms: placed on INDIVIDUAL cards of the player's choosing.
+  { id: "charm_scarab", kind: "charm", value: "scarab", name: "Scarab Seal",   rarity: "common",  weight: 18 },
+  { id: "charm_lotus",  kind: "charm", value: "lotus",  name: "Lotus Bloom",   rarity: "common",  weight: 18 },
+  { id: "charm_gild",   kind: "charm", value: "gild",   name: "Gold Leaf",     rarity: "rare",    weight: 10 },
+  { id: "charm_eye",    kind: "charm", value: "eye",    name: "Eye of Horus",  rarity: "rare",    weight: 10 },
+  { id: "charm_aten",   kind: "charm", value: "aten",   name: "Aten's Halo",   rarity: "epic",    weight: 5 },
 ];
+const CARD_KEY_RE = /^([2-9]|1[0-4])-(spades|hearts|diamonds|clubs)$/;
 const STARTERS = CATALOG.filter((c) => c.rarity === "starter").map((c) => c.id);
 const CATALOG_BY_ID = Object.fromEntries(CATALOG.map((c) => [c.id, c]));
 const PACK_SIZE = 3;
@@ -390,6 +397,19 @@ async function handleApi(req, res) {
         return sendJson(res, 400, { error: "NOT_OWNED" }), true;
       eq[key] = item.id;
     }
+    // Per-card charm placements: { cards: { "14-spades": "charm_gild" | null } }
+    if (body.cards && typeof body.cards === "object") {
+      eq.cards = eq.cards && typeof eq.cards === "object" ? eq.cards : {};
+      for (const [k, v] of Object.entries(body.cards)) {
+        if (!CARD_KEY_RE.test(k)) continue;
+        if (v === null) { delete eq.cards[k]; continue; }
+        const item = CATALOG_BY_ID[String(v)];
+        if (!item || item.kind !== "charm" || !owned.has(item.id)) continue;
+        eq.cards[k] = item.id;
+      }
+      const keys = Object.keys(eq.cards);
+      if (keys.length > 52) keys.slice(52).forEach((k) => delete eq.cards[k]);
+    }
     const updated = db.setEconomy(user.id, { packs: user.packs || 0, cosmetics: [...owned], equipped: eq });
     return sendJson(res, 200, { user: publicUser(updated) }), true;
   }
@@ -442,7 +462,8 @@ function clampNum(n, lo, hi) {
     db.setEconomy(u.id, {
       packs: 5,
       cosmetics: CATALOG.map((c) => c.id),
-      equipped: { skin: "skin_duat", fx: "fx_ankhs", play: "play_storm" },
+      equipped: { skin: "skin_duat", fx: "fx_ankhs", play: "play_storm",
+        cards: { "14-spades": "charm_gild", "12-hearts": "charm_eye" } },
     });
     if ((db.getUserById(u.id).xp || 0) < 5000) db.grantXpAndPacks(u.id, 5000, 0);
     console.log(`[auth] master account '${name}' ready — all trials + cosmetics unlocked`);

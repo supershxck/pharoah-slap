@@ -28,6 +28,8 @@ window.PS = window.PS || {};
     { id: 'play_comet',   kind: 'play', value: 'comet',   name: 'Comet Trail',   rarity: 'rare',    weight: 8,  glyph: '☄' },
     { id: 'play_sands',   kind: 'play', value: 'sands',   name: 'Desert Vortex', rarity: 'rare',    weight: 8,  glyph: '\u{1F32A}' },
     { id: 'play_storm',   kind: 'play', value: 'storm',   name: 'Storm of Set',  rarity: 'epic',    weight: 4,  glyph: '\u{26C8}' },
+    { id: 'table_gold',   kind: 'table', value: 'gold',   name: 'Gilded Hall',   rarity: 'rare',    weight: 10, glyph: '\u{1F3DB}' },
+    { id: 'table_duatbg', kind: 'table', value: 'duatbg', name: 'Duat Void',     rarity: 'epic',    weight: 5,  glyph: '\u{1F30C}' },
   ];
   const BY_ID = Object.fromEntries(CATALOG.map(c => [c.id, c]));
   const STARTERS = CATALOG.filter(c => c.rarity === 'starter').map(c => c.id);
@@ -95,6 +97,8 @@ window.PS = window.PS || {};
     PS.equippedFx = fx ? fx.value : null;
     const play = state.equipped.play && BY_ID[state.equipped.play];
     PS.equippedPlay = play ? play.value : null;
+    const table = state.equipped.table && BY_ID[state.equipped.table];
+    if (table) { PS.tweaks.tableTheme = table.value; if (PS.applyTableTheme) PS.applyTableTheme(); if (PS.persistTweaks) PS.persistTweaks(); }
   }
 
   // ---- Match results -------------------------------------------------------
@@ -259,6 +263,10 @@ window.PS = window.PS || {};
       const plays = el('div', 'coll-grid');
       CATALOG.filter(c => c.kind === 'play').forEach(c => plays.appendChild(itemTile(c)));
       grid.appendChild(plays);
+      grid.appendChild(el('div', 'coll-head', 'Table Backgrounds'));
+      const tables = el('div', 'coll-grid');
+      CATALOG.filter(c => c.kind === 'table').forEach(c => tables.appendChild(itemTile(c)));
+      grid.appendChild(tables);
     }
   }
 

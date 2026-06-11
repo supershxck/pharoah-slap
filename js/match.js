@@ -46,7 +46,8 @@ window.PS = window.PS || {};
     this.matchOver = false;
     this.pileEls = [];
     this.slapTarget = opts.slapTarget || 8;
-    this.expert = !!opts.expert;          // hide slap cues (Ra)
+    // Expert: hides slap cues — forced by Ra, or chosen in Settings.
+    this.expert = !!opts.expert || !!(PS.tweaks && PS.tweaks.expertUI);
     this.onEnd = typeof opts.onEnd === 'function' ? opts.onEnd : null;
     this.label = opts.label || 'Slap Duel';
 
@@ -84,7 +85,17 @@ window.PS = window.PS || {};
     this.charge = 0;
     this.renderShell();
     this.renderCharge();
+    const tbl = $('#screen-table');
+    if (tbl) tbl.classList.toggle('expert', this.expert);   // simplified UI
     if (PS.VFX) { PS.VFX.reset(); PS.VFX.setMode('table'); }
+    // live game clock
+    clearInterval(this._clock);
+    this._clock = setInterval(() => {
+      const el2 = $('#game-timer');
+      if (!el2 || this.matchOver) { clearInterval(this._clock); return; }
+      const s = Math.floor((Date.now() - this._t0) / 1000);
+      el2.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    }, 1000);
     PS.showScreen('table');
     if (PS.RULES) PS.RULES.setActive(this.cfg.slapOpts || {}, this.label, this.slapTarget);
     // First match ever → quick tutorial; the deal waits until it's dismissed.
@@ -107,7 +118,7 @@ window.PS = window.PS || {};
       '<div class="cardbar"><i id="hud-you-bar"></i></div></div>';
     $('#hud-info').innerHTML =
       '<div class="meta"><div class="pn engrave">First to ' + this.slapTarget + '</div>' +
-      '<div class="pc">' + this.label + '</div></div>';
+      '<div class="pc">' + this.label + ' · <span id="game-timer">0:00</span></div></div>';
 
     // Opponent belt
     const belt = $('#opp-belt'); belt.innerHTML = '';
@@ -119,7 +130,7 @@ window.PS = window.PS || {};
       o.innerHTML =
         '<div class="avatar">' + p.avatar + '</div>' +
         '<div class="on">' + p.name + '</div>' +
-        '<div class="ocnt"><span class="cnt">0</span> cards</div>' +
+        '<div class="ocnt"><span class="cnt">0</span> cards · <span class="osl">0</span>\u{1F590}</div>' +
         '<div class="cardbar" style="width:54px"><i></i></div>';
       belt.appendChild(o);
     }
@@ -272,7 +283,8 @@ window.PS = window.PS || {};
   Match.prototype.humanSlap = function () {
     if (this.matchOver || this.paused) return;
     const res = this.engine.attemptSlap(this.human);
-    if (!res || res.ignored) return;
+    if (res && res.late) { PS.toast('Beaten to it — no penalty'); return; }
+    if (!res || res.ignored) return;   // empty pile: the slap simply whiffs
     if (res.valid) {
       // win path -> onPileWon shows the 'YOU SLAPPED FIRST' moment
     } else {
@@ -382,6 +394,8 @@ window.PS = window.PS || {};
       youWon: won,
       slaps: me.slapsLanded,
       cards: me.cardsPlayed,
+      collected: me.cardsCollected,
+      time: duration,
     });
   };
 
@@ -444,6 +458,8 @@ window.PS = window.PS || {};
       if (bar) bar.style.width = Math.min(100, p.hand.length / total * 100) + '%';
       const cnt = o.querySelector('.ocnt .cnt');
       if (cnt) cnt.textContent = p.hand.length;
+      const osl = o.querySelector('.ocnt .osl');
+      if (osl) osl.textContent = p.slapsLanded;
       o.classList.toggle('out', p.eliminated);
     }
     // scoreline: you vs best opponent slaps
@@ -466,7 +482,7 @@ window.PS = window.PS || {};
   /* ---- cleanup ----------------------------------------------------------- */
   Match.prototype.clearTurnTimers = function () { this.timers.forEach(t => clearTimeout(t)); this.timers.clear(); };
   Match.prototype.clearBotSlapTimers = function () { this.botSlapTimers.forEach(t => clearTimeout(t)); this.botSlapTimers.clear(); };
-  Match.prototype.clearAll = function () { this.clearTurnTimers(); this.clearBotSlapTimers(); clearTimeout(this.windowTimer); };
+  Match.prototype.clearAll = function () { this.clearTurnTimers(); this.clearBotSlapTimers(); clearTimeout(this.windowTimer); clearInterval(this._clock); };
   Match.prototype.destroy = function () { this.matchOver = true; this.paused = true; this.clearAll(); };
 
   PS.highlightTurn = () => {};

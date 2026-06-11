@@ -201,6 +201,8 @@ window.PS = window.PS || {};
     $('#tribute').hidden = true;
     this.slaps = 0;
     this.charge = 0;
+    const tbl = document.getElementById('screen-table');
+    if (tbl) tbl.classList.toggle('expert', !!PS.tweaks.expertUI);
     if (PS.VFX) { PS.VFX.reset(); PS.VFX.setMode('table'); }
     this.refreshHUD();
     this.highlightTurn(this.turn);
@@ -246,7 +248,7 @@ window.PS = window.PS || {};
     if (turnIdx != null) { this.turn = turnIdx; this.highlightTurn(turnIdx); }
     // crude slap-window cue: a fresh card can become slappable
     this.slapWindowOpen = true;
-    $('#pile').classList.add('slappable');
+    if (!PS.tweaks.expertUI) $('#pile').classList.add('slappable');
     clearTimeout(this._slapT);
     this._slapT = setTimeout(() => { this.slapWindowOpen = false; $('#pile').classList.remove('slappable'); this.updateControls(); }, 1400);
     this.updateControls();

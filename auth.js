@@ -48,6 +48,9 @@ const CATALOG = [
   { id: "play_comet",   kind: "play", value: "comet",   name: "Comet Trail",   rarity: "rare",    weight: 8 },
   { id: "play_sands",   kind: "play", value: "sands",   name: "Desert Vortex", rarity: "rare",    weight: 8 },
   { id: "play_storm",   kind: "play", value: "storm",   name: "Storm of Set",  rarity: "epic",    weight: 4 },
+  // Table backgrounds: green/red/blue are free in Settings; these drop in packs.
+  { id: "table_gold",   kind: "table", value: "gold",   name: "Gilded Hall",   rarity: "rare",    weight: 10 },
+  { id: "table_duatbg", kind: "table", value: "duatbg", name: "Duat Void",     rarity: "epic",    weight: 5 },
 ];
 const STARTERS = CATALOG.filter((c) => c.rarity === "starter").map((c) => c.id);
 const CATALOG_BY_ID = Object.fromEntries(CATALOG.map((c) => [c.id, c]));
@@ -379,7 +382,7 @@ async function handleApi(req, res) {
     if (!body) return sendJson(res, 400, { error: "BAD_JSON" }), true;
     const owned = ownedOf(user);
     const eq = equippedOf(user);
-    for (const key of ["skin", "fx", "play"]) {
+    for (const key of ["skin", "fx", "play", "table"]) {
       if (body[key] === undefined) continue;
       if (body[key] === null) { delete eq[key]; continue; }
       const item = CATALOG_BY_ID[String(body[key])];

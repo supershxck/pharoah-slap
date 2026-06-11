@@ -10,8 +10,33 @@ window.PS = window.PS || {};
     "deckSkin": "tiedye",
     "players": 2,
     "gameSpeed": "normal",
-    "difficulty": "medium"
+    "difficulty": "medium",
+    "tableTheme": "green",
+    "expertUI": false
   }/*EDITMODE-END*/;
+
+  // Player-facing settings persist locally (separate from any account data).
+  const SETTINGS_KEY = 'ps_settings';
+  function loadSaved() {
+    try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') || {}; } catch { return {}; }
+  }
+  function persist() {
+    try {
+      const { tableTheme, expertUI, gameSpeed, difficulty, deckSkin, theme } = PS.tweaks;
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ tableTheme, expertUI, gameSpeed, difficulty, deckSkin, theme }));
+    } catch {}
+  }
+  PS.persistTweaks = persist;
+
+  // The duel table itself — free basics + pack-unlocked halls.
+  const TABLE_THEMES = ['green', 'red', 'blue', 'gold', 'duatbg'];
+  PS.applyTableTheme = function () {
+    const phone = document.querySelector('.phone');
+    if (!phone) return;
+    TABLE_THEMES.forEach((t) => phone.classList.remove('table-' + t));
+    const t = TABLE_THEMES.includes(PS.tweaks.tableTheme) ? PS.tweaks.tableTheme : 'green';
+    phone.classList.add('table-' + t);
+  };
 
   const THEMES = {
     gold:   { accent: '#e2ab3c', glow: 'rgba(242,200,90,.55)', hi: '#ffe9a8', g1: '#f6cf6b', g2: '#e2ab3c', g3: '#b6801f', deep: '#5e3d0e' },
@@ -37,6 +62,7 @@ window.PS = window.PS || {};
 
   function applyAll() {
     PS.applyTheme();
+    PS.applyTableTheme();
     if (PS.currentScreen && PS.currentScreen() === 'home' && PS.renderHome) PS.renderHome();
   }
 
@@ -44,10 +70,12 @@ window.PS = window.PS || {};
   let panel = null;
   function setTweak(key, val) {
     PS.tweaks[key] = val;
+    persist();
     window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: val } }, '*');
     applyAll();
     renderPanel();
   }
+  PS.setTweak = setTweak;
 
   function seg(label, key, opts) {
     const row = PS.el('div', 'twk-row');
@@ -128,6 +156,7 @@ window.PS = window.PS || {};
   });
 
   PS.initTweaks = function () {
+    Object.assign(PS.tweaks, loadSaved());   // restore the player's choices
     applyAll();
     window.parent.postMessage({ type: '__edit_mode_available' }, '*');
   };

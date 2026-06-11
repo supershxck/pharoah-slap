@@ -117,8 +117,18 @@
         <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
         <h3 class="engrave" id="rules-title">Rules of the Temple</h3>
         <div id="rules-body"></div>
+        <div id="rules-dots"></div>
         <button class="btn lapis" id="rules-close">Got It</button>
       </div>
+    </div>
+
+    <!-- ========================= SETTINGS ========================== -->
+    <div id="screen-settings" class="screen">
+      <div class="ladder-head">
+        <button class="icon-btn" data-nav="home">&#8249;</button>
+        <div class="ladder-titles"><h2>Settings</h2><div class="set-sub">Make the temple yours</div></div>
+      </div>
+      <div id="settings-body"></div>
     </div>
 
     <!-- ============================ HOME ============================ -->
@@ -130,6 +140,7 @@
           <div class="lvl" id="home-level">Level 17</div>
         </div>
         <div class="pill" id="home-packs" data-nav="pack">&#127873; 0</div>
+        <button class="icon-btn" data-nav="settings" title="Settings">&#9881;</button>
       </div>
 
       <div class="home-mid">
@@ -236,6 +247,8 @@
         <hr class="rule" style="margin:4px 0">
         <div class="rline"><span>Slaps Landed:</span><span class="v" id="vic-slaps">+0</span></div>
         <div class="rline"><span>Cards Played:</span><span class="v" id="vic-cards">+0</span></div>
+        <div class="rline"><span>Cards Collected:</span><span class="v" id="vic-collected">+0</span></div>
+        <div class="rline"><span>Game Time:</span><span class="v" id="vic-time">0:00</span></div>
         <div class="rline"><span class="engrave" id="vic-banner-word2" style="font-size:14px">Deck Upgrades Unlocked!</span></div>
       </div>
 
@@ -305,6 +318,7 @@
 <script src="js/match.js"></script>
 <script src="js/tweaks.js"></script>
 <script src="js/cosmetics.js"></script>
+<script src="js/settings.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/weighing.js"></script>
 <script src="js/ladder.js"></script>

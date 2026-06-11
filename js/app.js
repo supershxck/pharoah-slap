@@ -19,6 +19,13 @@ window.PS = window.PS || {};
     const eng = data.winner; // winner player object
     $('#vic-slaps').textContent = '+' + data.slaps;
     $('#vic-cards').textContent = '+' + data.cards;
+    const vc = $('#vic-collected');
+    if (vc) vc.textContent = '+' + (data.collected || 0);
+    const vt = $('#vic-time');
+    if (vt) {
+      const s = data.time || 0;
+      vt.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    }
     $('#vic-mode').textContent = youWon ? 'Slap Duel · Won' : 'Slap Duel · Lost';
 
     // reward fan
@@ -110,6 +117,7 @@ window.PS = window.PS || {};
     if (id === 'home') PS.renderHome();
     else if (id === 'profile') PS.renderProfile();
     else if (id === 'pack') PS.renderPack();
+    else if (id === 'settings' && PS.SETTINGS) PS.SETTINGS.render();
     // ambient canvas: glyph rain on auth, calm on home, duel-driven on table
     if (PS.VFX) {
       if (id === 'home') PS.VFX.setMode('home');

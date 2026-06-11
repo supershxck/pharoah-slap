@@ -27,16 +27,36 @@ window.PS = window.PS || {};
       '<span class="rn">' + name + '</span><span class="rd">' + desc + '</span></div>';
   }
 
+  /* ---- Tutorial pages (swipeable, one idea per page) ---------------------- */
+  const TUT_PAGES = [
+    { title: 'Take the Temple', body: () =>
+      '<div class="tut-glyph">🂠</div>' +
+      ruleRow('▶', 'Your turn', 'Players take turns flipping their top card onto the pile. Tap <b>PLAY CARD</b> (or press A).') +
+      ruleRow('🏆', 'The goal', 'Win cards by slapping. Reach the slap target — or take every card — and the temple is yours.') },
+    { title: 'Slap the Patterns', body: () =>
+      '<div class="tut-glyph">🖐</div>' +
+      ruleRow('🃏🃏', 'Double', 'Two equal ranks back-to-back.') +
+      ruleRow('🃏·🃏', 'Sandwich', 'Equal ranks, one card between.') +
+      ruleRow('👑♕', 'Marriage', 'Queen & King together.') +
+      ruleRow('♕·♔', 'Divorce', 'Queen & King, one card between.') +
+      ruleRow('⚡', 'Be first', 'Tap the pile or <b>SLAP</b> (or press S) — the whole pile is yours.') },
+    { title: 'The Tax', body: () =>
+      '<div class="tut-glyph">🗡</div>' +
+      ruleRow('🗡', 'Tribute', 'A face card demands tax: J = 1, Q = 2, K = 3, A = 4 cards. <b>The amount owed is shown on screen whenever tribute is required.</b>') +
+      ruleRow('⚖', 'Pay up', 'Fail to flip a face card while paying and the challenger takes the pile. Flip one, and the debt passes on.') +
+      ruleRow('🖐', 'Stay sharp', 'Patterns can still appear during a tribute — and they are still slappable!') },
+    { title: 'Justice', body: () =>
+      '<div class="tut-glyph">⚖</div>' +
+      ruleRow('✋', 'False slap', 'Slapping a pile that matches nothing burns one of your cards.') +
+      ruleRow('🤝', 'Fair play', 'Right but second? If someone beats you to a true slap, you lose nothing.') +
+      ruleRow('💨', 'Empty air', 'If the pile is already collected, a slap simply does nothing.') },
+  ];
+  let tutPage = 0;
+
   function body(tutorial) {
     const o = active.opts || {};
     const on = (k, dflt) => (dflt ? o[k] !== false : !!o[k]);
     let h = '';
-    if (tutorial) {
-      h += '<div class="rules-sect">How to play</div>' +
-        ruleRow('🂠', 'Play', 'Take turns flipping your top card onto the pile — tap PLAY CARD (or press A).') +
-        ruleRow('🖐', 'Slap', 'When the pile matches a rule below, slap it first — tap the pile or SLAP (or press S). You take the whole pile.') +
-        ruleRow('✋', 'Careful', 'A false slap burns one of your cards to the bottom of the pile.');
-    }
     h += '<div class="rules-sect">Slappable piles' + (active.opts ? ' — this match' : '') + '</div>';
     if (on('double', true))   h += ruleRow('🃏🃏', 'Double', 'Two equal ranks back-to-back (7·7).');
     if (on('sandwich', true)) h += ruleRow('🃏·🃏', 'Sandwich', 'Equal ranks with one card between (7·K·7).');
@@ -54,19 +74,57 @@ window.PS = window.PS || {};
     return h;
   }
 
+  let tutorialMode = false;
+
+  function renderTutPage() {
+    const page = TUT_PAGES[tutPage];
+    $('#rules-title').textContent = page.title;
+    const bodyEl = $('#rules-body');
+    bodyEl.innerHTML = page.body();
+    bodyEl.classList.add('tut-page');
+    // dots
+    const dots = $('#rules-dots');
+    if (dots) {
+      dots.innerHTML = '';
+      TUT_PAGES.forEach((_, i) => {
+        const d = document.createElement('span');
+        d.className = 'tdot' + (i === tutPage ? ' on' : '');
+        d.onclick = () => { tutPage = i; renderTutPage(); };
+        dots.appendChild(d);
+      });
+      dots.style.display = 'flex';
+    }
+    $('#rules-close').textContent = tutPage < TUT_PAGES.length - 1 ? 'Next ›' : 'Deal the Cards';
+  }
+
   function open(opts) {
     opts = opts || {};
     const veil = $('#rules-veil'); if (!veil) return;
-    $('#rules-title').textContent = opts.tutorial ? 'Quick Tutorial' : 'Rules of the Temple';
-    $('#rules-body').innerHTML = body(!!opts.tutorial);
-    $('#rules-close').textContent = opts.tutorial ? 'Deal the Cards' : 'Got It';
+    tutorialMode = !!opts.tutorial;
+    if (tutorialMode) {
+      tutPage = 0;
+      renderTutPage();
+    } else {
+      $('#rules-title').textContent = 'Rules of the Temple';
+      const bodyEl = $('#rules-body');
+      bodyEl.innerHTML = body(false);
+      bodyEl.classList.remove('tut-page');
+      const dots = $('#rules-dots'); if (dots) dots.style.display = 'none';
+      $('#rules-close').textContent = 'Got It';
+    }
     veil.classList.add('show');
     // Pause a live local match while reading (NetMatch is server-driven).
     const c = PS.activeController;
     if (opts.pause && c && c.engine && !c.matchOver) { c.paused = true; pausedMatch = c; }
   }
 
+  function advance() {
+    if (tutorialMode && tutPage < TUT_PAGES.length - 1) { tutPage++; renderTutPage(); return; }
+    close();
+  }
+
   function close() {
+    tutorialMode = false;
     const veil = $('#rules-veil'); if (veil) veil.classList.remove('show');
     if (pausedMatch) {
       const c = pausedMatch; pausedMatch = null;
@@ -85,11 +143,24 @@ window.PS = window.PS || {};
 
   function boot() {
     const wire = (id, fn) => { const e = $(id); if (e) e.addEventListener('click', fn); };
-    wire('#rules-close', close);
+    wire('#rules-close', advance);
     wire('#rules-btn', () => open({ pause: true }));
     wire('#howto-btn', () => { setActive(null, 'Pharaoh Slap', 0); open({ tutorial: true }); });
     const veil = $('#rules-veil');
-    if (veil) veil.addEventListener('click', (e) => { if (e.target === veil) close(); });
+    if (veil) {
+      veil.addEventListener('click', (e) => { if (e.target === veil && !tutorialMode) close(); });
+      // swipe between tutorial pages
+      let sx = null;
+      veil.addEventListener('touchstart', (e) => { sx = e.touches && e.touches[0] ? e.touches[0].clientX : null; }, { passive: true });
+      veil.addEventListener('touchend', (e) => {
+        if (sx == null || !tutorialMode) { sx = null; return; }
+        const ex = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : sx;
+        const dx = ex - sx; sx = null;
+        if (Math.abs(dx) < 42) return;
+        if (dx < 0 && tutPage < TUT_PAGES.length - 1) { tutPage++; renderTutPage(); }
+        else if (dx > 0 && tutPage > 0) { tutPage--; renderTutPage(); }
+      }, { passive: true });
+    }
   }
   boot();
 

@@ -425,6 +425,78 @@
   50% { box-shadow: 0 0 18px rgba(246,207,107,.12); }
 }
 
+/* ==================== TABLE BACKGROUNDS =================================== */
+/* free basics — chosen in Settings */
+.phone.table-green { background: linear-gradient(180deg, #0e3d29 0%, #0a2e1e 40%, #061f14 100%); }
+.phone.table-red   { background: linear-gradient(180deg, #421015 0%, #300a0e 40%, #1c0507 100%); }
+.phone.table-blue  { background: linear-gradient(180deg, #0b1233 0%, #0a0f28 40%, #080a1c 100%); }
+/* pack-unlocked halls */
+.phone.table-gold   { background: linear-gradient(180deg, #3a2a0c 0%, #2a1d06 40%, #181003 100%); }
+.phone.table-duatbg { background: linear-gradient(180deg, #1d0e3c 0%, #140828 40%, #0a0414 100%); }
+
+/* ==================== EXPERT MODE (simplified table) ====================== */
+#screen-table.expert .drama,
+#screen-table.expert .scoreline,
+#screen-table.expert .bigbtn-wrap .lab,
+#screen-table.expert .opp-belt .cardbar,
+#screen-table.expert .pile-glow { display: none !important; }
+#screen-table.expert .pile.slappable { box-shadow: none !important; animation: none !important; }
+
+/* ==================== TUTORIAL PAGER ====================================== */
+.tut-glyph { font-size: 34px; text-align: center; margin: 2px 0 4px; }
+#rules-body.tut-page { min-height: 230px; }
+#rules-dots { display: none; justify-content: center; gap: 7px; padding: 2px 0; }
+#rules-dots .tdot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(242,200,90,.25); cursor: pointer; transition: all .2s;
+}
+#rules-dots .tdot.on { background: var(--gold-1); transform: scale(1.25); box-shadow: 0 0 8px var(--accent-glow); }
+
+/* ==================== SETTINGS SCREEN ===================================== */
+#screen-settings { padding: 22px 18px; gap: 12px; overflow-y: auto;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+.set-sub { font-size: 11px; color: var(--muted); font-family: var(--font-head); letter-spacing: .1em; }
+#settings-body { display: flex; flex-direction: column; gap: 10px; }
+.set-tables { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.set-table {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  cursor: pointer; padding: 8px; border-radius: 12px;
+  border: 1px solid rgba(242,200,90,.18); background: rgba(0,0,0,.2);
+  transition: border-color .15s;
+}
+.set-table.on { border-color: var(--gold-1); box-shadow: 0 0 12px var(--accent-glow); }
+.set-table.locked { opacity: .45; }
+.set-sw { width: 64px; height: 44px; border-radius: 8px; border: 1px solid rgba(255,255,255,.15); }
+.set-tname { font-size: 10px; color: var(--parchment); font-family: var(--font-head); }
+.set-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: rgba(0,0,0,.22); border: 1px solid rgba(242,200,90,.16);
+  border-radius: 12px; padding: 12px 14px;
+}
+.set-row.col { flex-direction: column; align-items: stretch; gap: 8px; }
+.set-lbl { font-family: var(--font-head); font-weight: 700; font-size: 13px; color: var(--parchment); }
+.set-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.set-toggle {
+  flex: 0 0 auto; width: 52px; height: 30px; border-radius: 16px; border: 1px solid rgba(242,200,90,.3);
+  background: rgba(0,0,0,.4); cursor: pointer; position: relative; transition: background .2s;
+}
+.set-toggle i {
+  position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--muted); transition: all .2s;
+}
+.set-toggle.on { background: var(--gold-3, #b6801f); }
+.set-toggle.on i { left: 25px; background: var(--gold-hi, #ffe9a8); }
+.set-seg { display: flex; gap: 6px; }
+.set-seg button {
+  flex: 1; padding: 9px 0; border: 1px solid rgba(242,200,90,.2); border-radius: 9px;
+  background: rgba(0,0,0,.25); color: var(--muted); cursor: pointer;
+  font-family: var(--font-head); font-size: 12px; transition: all .15s;
+}
+.set-seg button.sel { background: var(--hero-grad); color: var(--ink); font-weight: 700; }
+
+/* No double-tap zoom anywhere in the game */
+html, body, .phone, .phone * { touch-action: manipulation; }
+
 /* Respect users who opt out of motion */
 @media (prefers-reduced-motion: reduce) {
   .phone.tremor1, .phone.tremor2,

@@ -74,6 +74,7 @@
       isHuman: !!p.isHuman,
       hand: [],
       cardsPlayed: 0,
+      cardsCollected: 0,
       slapsLanded: 0,
       slapsMissed: 0,
       pilesWon: 0,
@@ -189,11 +190,20 @@
     // A player attempts to slap. Returns result object.
     function attemptSlap(playerIdx) {
       if (state.phase !== 'playing') return { ignored: true };
+      // Pile already swept (or nothing dealt onto it yet) — a slap on empty
+      // air does nothing and costs nothing.
+      if (state.pile.length === 0) return { ignored: true, empty: true };
       const player = players[playerIdx];
       if (player.eliminated && player.hand.length === 0) {
         // Eliminated players can slap back in only if they still could win — allow
       }
       const chk = slapCheck(state.pile, slapOpts);
+      // Accurate but second: someone faster already claimed it. No penalty —
+      // being right and late is not a crime.
+      if (chk.valid && state.slapClaimed) {
+        emit({ type: 'slapLate', player: playerIdx });
+        return { player: playerIdx, ignored: true, late: true };
+      }
       if (chk.valid && !state.slapClaimed) {
         state.slapClaimed = true;
         state.slapOpen = false;
@@ -222,6 +232,7 @@
       // Winner takes the whole pile to the bottom of their hand
       while (state.pile.length) winner.hand.push(state.pile.shift());
       winner.pilesWon++;
+      winner.cardsCollected += count;
       state.tributeOwed = 0;
       state.challenger = -1;
       state.slapClaimed = false;
